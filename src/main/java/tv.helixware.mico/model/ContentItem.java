@@ -45,6 +45,9 @@ public class ContentItem implements Serializable {
     @Column(name = "last_modified_date")
     private DateTime lastModifiedDate;
 
+    protected ContentItem() {
+    }
+
     /**
      * Create an instance of ContentItem with the specified UUID.
      *

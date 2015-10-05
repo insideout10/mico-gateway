@@ -47,6 +47,9 @@ public class Fragment implements Serializable {
     @Column(name = "last_modified_date")
     private DateTime lastModifiedDate;
 
+    protected Fragment() {
+    }
+
     public Fragment(Long start, Long end, ContentPart contentPart) {
 
         this.start = start;

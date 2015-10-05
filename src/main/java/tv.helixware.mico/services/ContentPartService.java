@@ -7,6 +7,10 @@ import com.github.anno4j.model.impl.target.SpecificResource;
 import com.github.anno4j.querying.QueryService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.marmotta.ldpath.parser.ParseException;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
@@ -14,6 +18,7 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.sparql.SPARQLRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tv.helixware.mico.model.ContentItem;
 import tv.helixware.mico.model.ContentPart;
@@ -24,6 +29,7 @@ import tv.helixware.mico.response.CheckStatusResponse;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +48,9 @@ public class ContentPartService {
     private final ContentPartRepository contentPartRepository;
     private final FragmentRepository fragmentRepository;
 
+    private final String applicationKey;
+    private final String applicationSecret;
+
     /**
      * Create an instance of the ContentPartService.
      *
@@ -49,12 +58,15 @@ public class ContentPartService {
      * @since 1.0.0
      */
     @Autowired
-    public ContentPartService(final MicoClient client, final ContentPartRepository contentPartRepository, final FragmentRepository fragmentRepository) {
+    public ContentPartService(final MicoClient client, final ContentPartRepository contentPartRepository, final FragmentRepository fragmentRepository, @Value("${helixware.application.key}") final String applicationKey, @Value("${helixware.application.secret}") final String applicationSecret) {
 
         this.client = client;
 
         this.contentPartRepository = contentPartRepository;
         this.fragmentRepository = fragmentRepository;
+
+        this.applicationKey = applicationKey;
+        this.applicationSecret = applicationSecret;
 
     }
 
@@ -92,13 +104,26 @@ public class ContentPartService {
 
             // Copy locally the remote file and create a content part.
             final File tempFile = File.createTempFile("mico-", "tmp");
-            FileUtils.copyURLToFile(url, tempFile);
+
+            // Copy the remote file to a local temp file.
+            try (final CloseableHttpClient client = HttpClients.createDefault()) {
+
+                final HttpGet get = new HttpGet(url.toURI());
+
+                // Set the HelixWare headers required for authentication.
+                get.addHeader("X-Application-Key", applicationKey);
+                get.addHeader("X-Application-Secret", applicationSecret);
+
+                try (final CloseableHttpResponse response = client.execute(get)) {
+                    FileUtils.copyInputStreamToFile(response.getEntity().getContent(), tempFile);
+                }
+            }
             final Optional<ContentPart> contentPart = create(contentItem, mimeType, name, tempFile);
 
             tempFile.delete();
 
             return contentPart;
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException e) {
             log.error("An error occurred", e);
         }
 

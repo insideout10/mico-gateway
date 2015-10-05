@@ -24,6 +24,9 @@ public class Asset {
     @Column(nullable = false, length = 1024)
     private String url;
 
+    @Column(nullable = true, length = 1024)
+    private String guid;
+
     @Version
     private Long version;
 
@@ -36,4 +39,5 @@ public class Asset {
     @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
     @Column(name = "last_modified_date")
     private DateTime lastModifiedDate;
+
 }
