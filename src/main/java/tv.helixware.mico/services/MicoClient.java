@@ -1,4 +1,4 @@
-package tv.helixware.mico;
+package tv.helixware.mico.services;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -18,6 +18,8 @@ import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import tv.helixware.mico.model.Asset;
+import tv.helixware.mico.model.ContentItem;
 import tv.helixware.mico.model.ContentPart;
 import tv.helixware.mico.response.CheckStatusResponse;
 
@@ -94,7 +96,7 @@ public class MicoClient {
      * @return
      * @since 1.0.0
      */
-    public Optional<ContentItem> create() {
+    public Optional<ContentItem> create(final Asset asset) {
 
         final String url = serverURL + INJECT_CREATE_PATH;
 
@@ -133,7 +135,7 @@ public class MicoClient {
 
             // Get the URI and create a new ContentItem.
             final String uri = node.get("uri").asText();
-            return Optional.of(createContentItem(uri));
+            return Optional.of(createContentItem(asset, uri));
 
         } catch (Exception e) {
             log.error(String.format("An error occurred while parsing the response [ url :: %s ]", url));
@@ -178,7 +180,7 @@ public class MicoClient {
             }
 
             // Get the URI and create a new ContentItem.
-            return Optional.of(createContentPart(node.get("uri").asText(), mimeType, name));
+            return Optional.of(createContentPart(contentItem, node.get("uri").asText(), mimeType, name));
 
         } catch (URISyntaxException e) {
             log.error(String.format("The URL is invalid [ url :: %s ]", serverURL + INJECT_ADD_PATH), e);
@@ -188,6 +190,53 @@ public class MicoClient {
 
         return Optional.empty();
     }
+
+//    /**
+//     * Add a {@link ContentPart} to a {@link ContentItem}.
+//     *
+//     * @param contentItem
+//     * @param mimeType
+//     * @param name
+//     * @return
+//     * @since 1.0.0
+//     */
+//    public Optional<ContentPart> addContentPart(final ContentItem contentItem, final String mimeType, final String name, final InputStream stream) {
+//
+//        try {
+//            // Build the URI and get the response.
+//            final URI uri = new URIBuilder(serverURL + INJECT_ADD_PATH)
+//                    .setParameter("ci", contentItem.getUri())
+//                    .setParameter("type", mimeType)
+//                    .setParameter("name", name)
+//                    .build();
+//
+//            final InputStreamEntity entity = new InputStreamEntity(stream, ContentType.create(mimeType));
+//
+//            final Optional<String> response = post(uri.toString(), Optional.of(entity));
+//
+//            // If the response is empty, we return an empty.
+//            if (!response.isPresent())
+//                return Optional.empty();
+//
+//            final JsonNode node = objectMapper.readTree(response.get());
+//
+//            // If the *uri* field is missing from the JSON return an empty.
+//            if (!node.has("uri")) {
+//                log.error(String.format("The JSON is invalid [ url :: %s ][ response body :: %s ]", uri, response.get()));
+//                return Optional.empty();
+//            }
+//
+//            // Get the URI and create a new ContentItem.
+//            return Optional.of(createContentPart(contentItem, node.get("uri").asText(), mimeType, name));
+//
+//        } catch (URISyntaxException e) {
+//            log.error(String.format("The URL is invalid [ url :: %s ]", serverURL + INJECT_ADD_PATH), e);
+//        } catch (IOException e) {
+//            log.error(String.format("An error occurred while parsing the response [ url :: %s ]", serverURL + INJECT_ADD_PATH), e);
+//        }
+//
+//        return Optional.empty();
+//    }
 
     /**
      * Submit the {@link ContentItem} for processing.
@@ -254,10 +303,10 @@ public class MicoClient {
      * @return A ContentItem instance
      * @since 1.0.0
      */
-    private ContentItem createContentItem(final String uri) {
+    private ContentItem createContentItem(final Asset asset, final String uri) {
 
         final String[] parts = uri.split("/");
-        return new ContentItem(uri, parts[parts.length - 1]);
+        return new ContentItem(asset, uri, parts[parts.length - 1]);
     }
 
     // TODO: move to a ContentPartBuilder class.
@@ -269,10 +318,10 @@ public class MicoClient {
      * @return A ContentPart instance.
      * @since 1.0.0
      */
-    private ContentPart createContentPart(final String uri, final String mimeType, final String name) {
+    private ContentPart createContentPart(final ContentItem contentItem, final String uri, final String mimeType, final String name) {
 
         final String[] parts = uri.split("/");
-        return new ContentPart(uri, parts[parts.length - 1], mimeType, name);
+        return new ContentPart(contentItem, uri, parts[parts.length - 1], mimeType, name);
     }
 
 

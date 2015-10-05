@@ -10,13 +10,11 @@ import javax.persistence.*;
 import java.io.Serializable;
 
 /**
- * Represents a Content Part in MICO.
- *
  * @since 1.0.0
  */
 @Data
 @Entity
-public class ContentPart implements Serializable {
+public class ContentItem implements Serializable {
 
     private static final long serialVersionUID = 2L;
 
@@ -27,18 +25,12 @@ public class ContentPart implements Serializable {
     @Column(nullable = false, length = 1024)
     private String uri;
 
-    @Column(nullable = false, length = 1024)
+    @Column(nullable = false)
     private String uuid;
 
-    @Column(nullable = false)
-    private String mimeType;
-
-    @Column(nullable = false)
-    private String name;
-
     @ManyToOne
-    @JoinColumn(name = "content_item_id")
-    private ContentItem contentItem;
+    @JoinColumn(name = "asset_id")
+    private Asset asset;
 
     @Version
     private Long version;
@@ -53,22 +45,32 @@ public class ContentPart implements Serializable {
     @Column(name = "last_modified_date")
     private DateTime lastModifiedDate;
 
-    protected ContentPart() {
-
-    }
-
     /**
-     * @param uri
-     * @param uuid
+     * Create an instance of ContentItem with the specified UUID.
+     *
+     * @param uuid The unique ID for this ContentItem.
      * @since 4.2.0
      */
-    public ContentPart(final ContentItem contentItem, final String uri, final String uuid, final String mimeType, final String name) {
+    public ContentItem(final Asset asset, final String uri, final String uuid) {
 
-        this.contentItem = contentItem;
+        this.asset = asset;
         this.uri = uri;
         this.uuid = uuid;
-        this.mimeType = mimeType;
-        this.name = name;
     }
 
+    public String getUri() {
+        return uri;
+    }
+
+    public String getUUID() {
+        return uuid;
+    }
+
+    @Override
+    public String toString() {
+        return "ContentItem{" +
+                "uri='" + uri + '\'' +
+                ", uuid='" + uuid + '\'' +
+                '}';
+    }
 }

@@ -6,7 +6,7 @@ import com.github.anno4j.model.impl.selector.FragmentSelector;
 import com.github.anno4j.model.impl.target.SpecificResource;
 import com.github.anno4j.querying.QueryService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.marmotta.ldpath.parser.ParseException;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
@@ -15,8 +15,7 @@ import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.sparql.SPARQLRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import tv.helixware.mico.ContentItem;
-import tv.helixware.mico.MicoClient;
+import tv.helixware.mico.model.ContentItem;
 import tv.helixware.mico.model.ContentPart;
 import tv.helixware.mico.model.Fragment;
 import tv.helixware.mico.persist.ContentPartRepository;
@@ -24,7 +23,10 @@ import tv.helixware.mico.persist.FragmentRepository;
 import tv.helixware.mico.response.CheckStatusResponse;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +35,7 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @Service
-public class IngestionService {
+public class ContentPartService {
 
     private final MicoClient client;
 
@@ -41,53 +43,88 @@ public class IngestionService {
     private final FragmentRepository fragmentRepository;
 
     /**
-     * Create an instance of the IngestionService.
+     * Create an instance of the ContentPartService.
      *
+     * @param client
      * @since 1.0.0
      */
     @Autowired
-    public IngestionService(final MicoClient micoClient, final ContentPartRepository contentPartRepository, final FragmentRepository fragmentRepository) {
+    public ContentPartService(final MicoClient client, final ContentPartRepository contentPartRepository, final FragmentRepository fragmentRepository) {
 
-        this.client = micoClient;
+        this.client = client;
 
         this.contentPartRepository = contentPartRepository;
         this.fragmentRepository = fragmentRepository;
 
     }
 
-    public void upload(final File file) {
+    /**
+     * Create a {@link ContentPart} with the provided file.
+     *
+     * @param contentItem
+     * @param mimeType
+     * @param name
+     * @param file
+     * @return
+     * @since 1.0.0
+     */
+    public Optional<ContentPart> create(final ContentItem contentItem, final String mimeType, final String name, final File file) {
 
-        final String type = "video/mp4";
-        final String name = RandomStringUtils.randomAlphanumeric(12) + ".mp4";
+        // Return the content part persisted to the database.
+        return client.addContentPart(contentItem, mimeType, name, file)
+                .map(contentPartRepository::save);
 
-//        final MicoClient client = new MicoClient(serverURL + "broker/");
-
-        // 1. Create a Content Item.
-        client.create().ifPresent(ci -> {
-            log.info(String.format("Content Item created [ content item :: %s ]", ci.getUri()));
-
-//            final File file = new File(getClass().getClassLoader().getResource(filename).getFile());
-
-            // 2. Add a Content Part.
-            client.addContentPart(ci, type, name, file).ifPresent(cp -> {
-                log.info(String.format("Content Part created [ content part :: %s ]", cp.getUri()));
-
-                // 3. Submit the Content Item.
-                final boolean result = client.submit(ci);
-                log.info(String.format("Content Part submitted [ success :: %s ]", result ? "true" : "false"));
-
-                checkStatus(client, ci);
-
-                try {
-                    getAnnotations(cp);
-                } catch (RepositoryException | RepositoryConfigException | QueryEvaluationException | MalformedQueryException | ParseException e) {
-                    log.error(e.getMessage(), e);
-                }
-            });
-        });
     }
 
-    private void checkStatus(final MicoClient client, final ContentItem contentItem) {
+    /**
+     * Create a {@link ContentPart} using the file at the specified URL.
+     *
+     * @param contentItem
+     * @param mimeType
+     * @param name
+     * @param url
+     * @return
+     * @since 1.0.0
+     */
+    public Optional<ContentPart> create(final ContentItem contentItem, final String mimeType, final String name, final URL url) {
+
+        try {
+
+            // Copy locally the remote file and create a content part.
+            final File tempFile = File.createTempFile("mico-", "tmp");
+            FileUtils.copyURLToFile(url, tempFile);
+            final Optional<ContentPart> contentPart = create(contentItem, mimeType, name, tempFile);
+
+            tempFile.delete();
+
+            return contentPart;
+        } catch (IOException e) {
+            log.error("An error occurred", e);
+        }
+
+        return Optional.empty();
+
+    }
+
+    /**
+     * Process the {@link ContentPart} by saving the related annotations.
+     *
+     * @param contentPart
+     * @since 1.0.0
+     */
+    public void process(final ContentPart contentPart) {
+
+        blockUntilComplete(client, contentPart.getContentItem());
+
+        try {
+            getAnnotationsInternal(contentPart);
+        } catch (RepositoryException | RepositoryConfigException | QueryEvaluationException | MalformedQueryException | ParseException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+
+    private void blockUntilComplete(final MicoClient client, final ContentItem contentItem) {
 
         List<CheckStatusResponse> response;
         while ((response = client.checkStatus(contentItem, true)).isEmpty() || !response.get(0).isFinished()) {
@@ -105,7 +142,7 @@ public class IngestionService {
 
     }
 
-    private void getAnnotations(final ContentPart contentPart) throws RepositoryException, RepositoryConfigException, ParseException, MalformedQueryException, QueryEvaluationException {
+    private void getAnnotationsInternal(final ContentPart contentPart) throws RepositoryException, RepositoryConfigException, ParseException, MalformedQueryException, QueryEvaluationException {
         final Anno4j anno4j = Anno4j.getInstance();
         // Configuring the repository for Anno4j, but using the default Anno4j IDGenerator
 
@@ -137,7 +174,6 @@ public class IngestionService {
 
 //            log.info("Current annotation object: \r\n {}", an.toString());
 
-        final ContentPart cp = contentPartRepository.save(contentPart);
         final Pattern pattern = Pattern.compile("t=npt:(\\d+),(\\d+)");
 
         annotationList.stream()
@@ -152,7 +188,7 @@ public class IngestionService {
                     final Matcher matcher = pattern.matcher(v);
                     if (matcher.find()) {
                         log.info(String.format("[ start :: %s ][ end :: %s ]", matcher.group(1), matcher.group(2)));
-                        final Fragment fragment = new Fragment(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)), cp);
+                        final Fragment fragment = new Fragment(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)), contentPart);
                         fragmentRepository.save(fragment);
                     }
                 });
@@ -163,4 +199,5 @@ public class IngestionService {
 //        final String downloadURL = String.format("http://%s:%s@%s/broker/status/download?partUri=%s&itemUri=%s", username, password, server, URLEncoder.encode(contentPart.getUri(), "UTF-8"), URLEncoder.encode(contentItem.getUri(), "UTF-8"));
 
     }
+
 }
