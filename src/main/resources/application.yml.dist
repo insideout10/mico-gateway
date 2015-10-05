@@ -1,0 +1,18 @@
+server.port: 8081
+
+mico:
+  server:
+  username:
+  password:
+
+spring:
+  datasource:
+    url:
+    username:
+    password:
+    driverClassName: com.mysql.jdbc.Driver
+    testOnBorrow: true
+    validationQuery: SELECT 1
+  jpa.hibernate:
+    ddl-auto: create-drop
+    naming_strategy: org.hibernate.cfg.ImprovedNamingStrategy
