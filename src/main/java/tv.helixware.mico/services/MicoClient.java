@@ -19,8 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import tv.helixware.mico.model.Asset;
-import tv.helixware.mico.model.ContentItem;
-import tv.helixware.mico.model.ContentPart;
+import tv.helixware.mico.model.Item;
+import tv.helixware.mico.model.Part;
 import tv.helixware.mico.response.CheckStatusResponse;
 
 import java.io.File;
@@ -91,12 +91,12 @@ public class MicoClient {
     }
 
     /**
-     * Create a {@link ContentItem}.
+     * Create a {@link Item}.
      *
      * @return
      * @since 1.0.0
      */
-    public Optional<ContentItem> create(final Asset asset) {
+    public Optional<Item> create(final Asset asset) {
 
         final String url = serverURL + INJECT_CREATE_PATH;
 
@@ -145,20 +145,20 @@ public class MicoClient {
     }
 
     /**
-     * Add a {@link ContentPart} to a {@link ContentItem}.
+     * Add a {@link Part} to a {@link Item}.
      *
-     * @param contentItem
+     * @param item
      * @param mimeType
      * @param name
      * @return
      * @since 1.0.0
      */
-    public Optional<ContentPart> addContentPart(final ContentItem contentItem, final String mimeType, final String name, final File file) {
+    public Optional<Part> addContentPart(final Item item, final String mimeType, final String name, final File file) {
 
         try {
             // Build the URI and get the response.
             final URI uri = new URIBuilder(serverURL + INJECT_ADD_PATH)
-                    .setParameter("ci", contentItem.getUri())
+                    .setParameter("ci", item.getUri())
                     .setParameter("type", mimeType)
                     .setParameter("name", name)
                     .build();
@@ -180,7 +180,7 @@ public class MicoClient {
             }
 
             // Get the URI and create a new ContentItem.
-            return Optional.of(createContentPart(contentItem, node.get("uri").asText(), mimeType, name));
+            return Optional.of(createContentPart(item, node.get("uri").asText(), mimeType, name));
 
         } catch (URISyntaxException e) {
             log.error(String.format("The URL is invalid [ url :: %s ]", serverURL + INJECT_ADD_PATH), e);
@@ -239,17 +239,17 @@ public class MicoClient {
 //    }
 
     /**
-     * Submit the {@link ContentItem} for processing.
+     * Submit the {@link Item} for processing.
      *
-     * @param contentItem
+     * @param item
      * @since 1.0.0
      */
-    public boolean submit(final ContentItem contentItem) {
+    public boolean submit(final Item item) {
 
         // Build the URI and get the response.
         try {
             final URI uri = new URIBuilder(serverURL + INJECT_SUBMIT_PATH)
-                    .setParameter("ci", contentItem.getUri())
+                    .setParameter("ci", item.getUri())
                     .build();
 
             // If the response is present (although empty), it's a success.
@@ -263,17 +263,17 @@ public class MicoClient {
     }
 
     /**
-     * @param contentItem
+     * @param item
      * @param parts
      * @return
      * @since 1.0.0
      */
-    public List<CheckStatusResponse> checkStatus(final ContentItem contentItem, final boolean parts) {
+    public List<CheckStatusResponse> checkStatus(final Item item, final boolean parts) {
 
         try {
             // Build the URI and get the response.
             final URI uri = new URIBuilder(serverURL + STATUS_ITEMS_PATH)
-                    .setParameter("uri", contentItem.getUri())
+                    .setParameter("uri", item.getUri())
                     .setParameter("parts", parts ? "true" : "false")
                     .build();
 
@@ -297,31 +297,31 @@ public class MicoClient {
     // TODO: move to a ContentItemBuilder class.
 
     /**
-     * Create a {@link ContentItem} given a URI.
+     * Create a {@link Item} given a URI.
      *
      * @param uri The ContentItem URI as returned by MICO.
      * @return A ContentItem instance
      * @since 1.0.0
      */
-    private ContentItem createContentItem(final Asset asset, final String uri) {
+    private Item createContentItem(final Asset asset, final String uri) {
 
         final String[] parts = uri.split("/");
-        return new ContentItem(asset, uri, parts[parts.length - 1]);
+        return new Item(asset, uri, parts[parts.length - 1]);
     }
 
     // TODO: move to a ContentPartBuilder class.
 
     /**
-     * Create a {@link ContentPart} given a URI.
+     * Create a {@link Part} given a URI.
      *
      * @param uri The ContentPart URI as returned by MICO.
      * @return A ContentPart instance.
      * @since 1.0.0
      */
-    private ContentPart createContentPart(final ContentItem contentItem, final String uri, final String mimeType, final String name) {
+    private Part createContentPart(final Item item, final String uri, final String mimeType, final String name) {
 
         final String[] parts = uri.split("/");
-        return new ContentPart(contentItem, uri, parts[parts.length - 1], mimeType, name);
+        return new Part(item, uri, parts[parts.length - 1], mimeType, name);
     }
 
 

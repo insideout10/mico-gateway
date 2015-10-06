@@ -9,8 +9,8 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import tv.helixware.mico.services.AssetService;
-import tv.helixware.mico.services.ContentItemService;
-import tv.helixware.mico.services.ContentPartService;
+import tv.helixware.mico.services.ItemService;
+import tv.helixware.mico.services.PartService;
 
 import java.io.File;
 
@@ -29,19 +29,19 @@ public class MicoClientTest {
     private AssetService assetService;
 
     @Autowired
-    private ContentItemService contentItemService;
+    private ItemService itemService;
 
     @Autowired
-    private ContentPartService contentPartService;
+    private PartService partService;
 
     @Test
     public void testWildAnimals() throws Exception {
 
         // Create a content item, if successful create a content part with the file and then process the annotations.
-        contentItemService
-                .create(AssetService.NULL_ASSET).ifPresent(ci -> contentPartService
+        itemService
+                .create(AssetService.NULL_ASSET).ifPresent(ci -> partService
                 .create(ci, MIME_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", new File(getClass().getClassLoader().getResource("wild_animals.mp4").getFile()))
-                .ifPresent(contentPartService::process));
+                .ifPresent(partService::process));
 
     }
 
@@ -49,10 +49,10 @@ public class MicoClientTest {
     public void testMohamed() throws Exception {
 
         // Create a content item, if successful create a content part with the file and then process the annotations.
-        contentItemService
-                .create(AssetService.NULL_ASSET).ifPresent(ci -> contentPartService
+        itemService
+                .create(AssetService.NULL_ASSET).ifPresent(ci -> partService
                 .create(ci, MIME_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", new File(getClass().getClassLoader().getResource("mohamed.mp4").getFile()))
-                .ifPresent(contentPartService::process));
+                .ifPresent(partService::process));
 
     }
 

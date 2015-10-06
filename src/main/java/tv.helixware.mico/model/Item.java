@@ -14,9 +14,9 @@ import java.io.Serializable;
  */
 @Data
 @Entity
-public class ContentItem implements Serializable {
+public class Item implements Serializable {
 
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
 
     @Id
     @GeneratedValue
@@ -45,7 +45,7 @@ public class ContentItem implements Serializable {
     @Column(name = "last_modified_date")
     private DateTime lastModifiedDate;
 
-    protected ContentItem() {
+    protected Item() {
     }
 
     /**
@@ -54,7 +54,7 @@ public class ContentItem implements Serializable {
      * @param uuid The unique ID for this ContentItem.
      * @since 4.2.0
      */
-    public ContentItem(final Asset asset, final String uri, final String uuid) {
+    public Item(final Asset asset, final String uri, final String uuid) {
 
         this.asset = asset;
         this.uri = uri;

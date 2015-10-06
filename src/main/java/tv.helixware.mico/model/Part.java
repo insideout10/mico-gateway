@@ -16,9 +16,9 @@ import java.io.Serializable;
  */
 @Data
 @Entity
-public class ContentPart implements Serializable {
+public class Part implements Serializable {
 
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 3L;
 
     @Id
     @GeneratedValue
@@ -37,8 +37,8 @@ public class ContentPart implements Serializable {
     private String name;
 
     @ManyToOne
-    @JoinColumn(name = "content_item_id")
-    private ContentItem contentItem;
+    @JoinColumn(name = "item_id")
+    private Item item;
 
     @Version
     private Long version;
@@ -53,7 +53,7 @@ public class ContentPart implements Serializable {
     @Column(name = "last_modified_date")
     private DateTime lastModifiedDate;
 
-    protected ContentPart() {
+    protected Part() {
 
     }
 
@@ -62,9 +62,9 @@ public class ContentPart implements Serializable {
      * @param uuid
      * @since 4.2.0
      */
-    public ContentPart(final ContentItem contentItem, final String uri, final String uuid, final String mimeType, final String name) {
+    public Part(final Item item, final String uri, final String uuid, final String mimeType, final String name) {
 
-        this.contentItem = contentItem;
+        this.item = item;
         this.uri = uri;
         this.uuid = uuid;
         this.mimeType = mimeType;

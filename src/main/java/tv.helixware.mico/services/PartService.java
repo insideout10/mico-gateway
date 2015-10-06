@@ -20,10 +20,10 @@ import org.openrdf.repository.sparql.SPARQLRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import tv.helixware.mico.model.ContentItem;
-import tv.helixware.mico.model.ContentPart;
+import tv.helixware.mico.model.Item;
+import tv.helixware.mico.model.Part;
 import tv.helixware.mico.model.Fragment;
-import tv.helixware.mico.persist.ContentPartRepository;
+import tv.helixware.mico.persist.PartRepository;
 import tv.helixware.mico.persist.FragmentRepository;
 import tv.helixware.mico.response.CheckStatusResponse;
 
@@ -41,11 +41,11 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @Service
-public class ContentPartService {
+public class PartService {
 
     private final MicoClient client;
 
-    private final ContentPartRepository contentPartRepository;
+    private final PartRepository partRepository;
     private final FragmentRepository fragmentRepository;
 
     private final String applicationKey;
@@ -58,11 +58,11 @@ public class ContentPartService {
      * @since 1.0.0
      */
     @Autowired
-    public ContentPartService(final MicoClient client, final ContentPartRepository contentPartRepository, final FragmentRepository fragmentRepository, @Value("${helixware.application.key}") final String applicationKey, @Value("${helixware.application.secret}") final String applicationSecret) {
+    public PartService(final MicoClient client, final PartRepository partRepository, final FragmentRepository fragmentRepository, @Value("${helixware.application.key}") final String applicationKey, @Value("${helixware.application.secret}") final String applicationSecret) {
 
         this.client = client;
 
-        this.contentPartRepository = contentPartRepository;
+        this.partRepository = partRepository;
         this.fragmentRepository = fragmentRepository;
 
         this.applicationKey = applicationKey;
@@ -71,34 +71,34 @@ public class ContentPartService {
     }
 
     /**
-     * Create a {@link ContentPart} with the provided file.
+     * Create a {@link Part} with the provided file.
      *
-     * @param contentItem
+     * @param item
      * @param mimeType
      * @param name
      * @param file
      * @return
      * @since 1.0.0
      */
-    public Optional<ContentPart> create(final ContentItem contentItem, final String mimeType, final String name, final File file) {
+    public Optional<Part> create(final Item item, final String mimeType, final String name, final File file) {
 
         // Return the content part persisted to the database.
-        return client.addContentPart(contentItem, mimeType, name, file)
-                .map(contentPartRepository::save);
+        return client.addContentPart(item, mimeType, name, file)
+                .map(partRepository::save);
 
     }
 
     /**
-     * Create a {@link ContentPart} using the file at the specified URL.
+     * Create a {@link Part} using the file at the specified URL.
      *
-     * @param contentItem
+     * @param item
      * @param mimeType
      * @param name
      * @param url
      * @return
      * @since 1.0.0
      */
-    public Optional<ContentPart> create(final ContentItem contentItem, final String mimeType, final String name, final URL url) {
+    public Optional<Part> create(final Item item, final String mimeType, final String name, final URL url) {
 
         try {
 
@@ -118,7 +118,7 @@ public class ContentPartService {
                     FileUtils.copyInputStreamToFile(response.getEntity().getContent(), tempFile);
                 }
             }
-            final Optional<ContentPart> contentPart = create(contentItem, mimeType, name, tempFile);
+            final Optional<Part> contentPart = create(item, mimeType, name, tempFile);
 
             tempFile.delete();
 
@@ -132,27 +132,27 @@ public class ContentPartService {
     }
 
     /**
-     * Process the {@link ContentPart} by saving the related annotations.
+     * Process the {@link Part} by saving the related annotations.
      *
-     * @param contentPart
+     * @param part
      * @since 1.0.0
      */
-    public void process(final ContentPart contentPart) {
+    public void process(final Part part) {
 
-        blockUntilComplete(client, contentPart.getContentItem());
+        blockUntilComplete(client, part.getItem());
 
         try {
-            getAnnotationsInternal(contentPart);
+            getAnnotationsInternal(part);
         } catch (RepositoryException | RepositoryConfigException | QueryEvaluationException | MalformedQueryException | ParseException e) {
             log.error(e.getMessage(), e);
         }
     }
 
 
-    private void blockUntilComplete(final MicoClient client, final ContentItem contentItem) {
+    private void blockUntilComplete(final MicoClient client, final Item item) {
 
         List<CheckStatusResponse> response;
-        while ((response = client.checkStatus(contentItem, true)).isEmpty() || !response.get(0).isFinished()) {
+        while ((response = client.checkStatus(item, true)).isEmpty() || !response.get(0).isFinished()) {
             log.info(String.format("Not finished, waiting..."));
 
             try {
@@ -167,7 +167,7 @@ public class ContentPartService {
 
     }
 
-    private void getAnnotationsInternal(final ContentPart contentPart) throws RepositoryException, RepositoryConfigException, ParseException, MalformedQueryException, QueryEvaluationException {
+    private void getAnnotationsInternal(final Part part) throws RepositoryException, RepositoryConfigException, ParseException, MalformedQueryException, QueryEvaluationException {
         final Anno4j anno4j = Anno4j.getInstance();
         // Configuring the repository for Anno4j, but using the default Anno4j IDGenerator
 
@@ -176,7 +176,7 @@ public class ContentPartService {
         repository.initialize();
         anno4j.setRepository(repository);
 
-        final String contentPartId = contentPart.getUri();
+        final String contentPartId = part.getUri();
         final String ldPath = "^mico:hasContent/^mico:hasContentPart/mico:hasContentPart";
 
         // Getting the QueryService to query for Annotation objects, setting the mico namespace and adding a criteria.
@@ -213,7 +213,7 @@ public class ContentPartService {
                     final Matcher matcher = pattern.matcher(v);
                     if (matcher.find()) {
                         log.info(String.format("[ start :: %s ][ end :: %s ]", matcher.group(1), matcher.group(2)));
-                        final Fragment fragment = new Fragment(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)), contentPart);
+                        final Fragment fragment = new Fragment(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)), part);
                         fragmentRepository.save(fragment);
                     }
                 });

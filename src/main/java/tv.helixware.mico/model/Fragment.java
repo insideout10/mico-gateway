@@ -31,8 +31,8 @@ public class Fragment implements Serializable {
     private Long end;
 
     @ManyToOne
-    @JoinColumn(name = "content_part_id")
-    private ContentPart contentPart;
+    @JoinColumn(name = "part_id")
+    private Part part;
 
     @Version
     private Long version;
@@ -50,11 +50,11 @@ public class Fragment implements Serializable {
     protected Fragment() {
     }
 
-    public Fragment(Long start, Long end, ContentPart contentPart) {
+    public Fragment(Long start, Long end, Part part) {
 
         this.start = start;
         this.end = end;
-        this.contentPart = contentPart;
+        this.part = part;
     }
 
 }

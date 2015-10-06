@@ -18,23 +18,23 @@ public class AssetService {
 
     private final static String MIME_TYPE = "video/mp4";
 
-    private final ContentItemService contentItemService;
-    private final ContentPartService contentPartService;
+    private final ItemService itemService;
+    private final PartService partService;
 
     public final static Asset NULL_ASSET = new Asset();
 
     /**
      * Create an instance of the AssetService.
      *
-     * @param contentItemService
-     * @param contentPartService
+     * @param itemService
+     * @param partService
      * @since 1.0.0
      */
     @Autowired
-    public AssetService(final ContentItemService contentItemService, final ContentPartService contentPartService) {
+    public AssetService(final ItemService itemService, final PartService partService) {
 
-        this.contentItemService = contentItemService;
-        this.contentPartService = contentPartService;
+        this.itemService = itemService;
+        this.partService = partService;
     }
 
     /**
@@ -55,11 +55,11 @@ public class AssetService {
         }
 
         // Create a content item, if successful create a content part with the file and then process the annotations.
-        contentItemService.create(asset).ifPresent(ci -> contentPartService
+        itemService.create(asset).ifPresent(ci -> partService
                 .create(ci, MIME_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", url)
                 .ifPresent(cp -> {
-                    contentItemService.submit(ci); // Submit the content item.
-                    contentPartService.process(cp); // Process the results for the content part.
+                    itemService.submit(ci); // Submit the content item.
+                    partService.process(cp); // Process the results for the content part.
                 }));
 
     }
