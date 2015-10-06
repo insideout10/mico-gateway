@@ -14,7 +14,7 @@ import tv.helixware.mico.model.Fragment;
  */
 public interface FragmentRepository extends PagingAndSortingRepository<Fragment, Long> {
 
-    @Query("select f from Fragment f where f.contentPart.contentItem.asset.guid = :guid")
+    @Query("select f from Fragment f where f.part.item.asset.guid = :guid")
     Page<Fragment> findByAssetGUID(@Param("guid") String guid, Pageable page);
 
 }
