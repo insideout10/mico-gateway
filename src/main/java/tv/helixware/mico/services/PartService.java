@@ -20,11 +20,11 @@ import org.openrdf.repository.sparql.SPARQLRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import tv.helixware.mico.model.Fragment;
 import tv.helixware.mico.model.Item;
 import tv.helixware.mico.model.Part;
-import tv.helixware.mico.model.Fragment;
-import tv.helixware.mico.persist.PartRepository;
 import tv.helixware.mico.persist.FragmentRepository;
+import tv.helixware.mico.persist.PartRepository;
 import tv.helixware.mico.response.CheckStatusResponse;
 
 import java.io.File;
@@ -179,12 +179,20 @@ public class PartService {
         final String contentPartId = part.getUri();
         final String ldPath = "^mico:hasContent/^mico:hasContentPart/mico:hasContentPart";
 
+        /**
+         * Temporal Video Segmentation:
+         *  * TVSShotBoundaryFrameBody
+         *
+         * Face Detection:
+         *  * FaceDetectionBody
+         */
+
         // Getting the QueryService to query for Annotation objects, setting the mico namespace and adding a criteria.
         final QueryService queryService = anno4j
                 .createQueryService(Annotation.class)
                 .addPrefix("mico", "http://www.mico-project.eu/ns/platform/1.0/schema#")
-//                .setAnnotationCriteria(ldPath, contentPartId, Comparison.EQ);
-                .setAnnotationCriteria(ldPath, contentPartId);
+                .setAnnotationCriteria(ldPath, contentPartId)
+                .setBodyCriteria("[is-a mico:TVSShotBoundaryFrameBody]");
 
 
         // Running the prototype for insideout
@@ -197,6 +205,7 @@ public class PartService {
 
 //            logger.info("Current annotation object: \r\n {}", an.toString());
 
+//        annotationList.stream().forEach(an -> log.info("Current annotation object: \r\n {}", an.toString()));
 //            log.info("Current annotation object: \r\n {}", an.toString());
 
         final Pattern pattern = Pattern.compile("t=npt:(\\d+),(\\d+)");

@@ -21,8 +21,6 @@ public class AssetService {
     private final ItemService itemService;
     private final PartService partService;
 
-    public final static Asset NULL_ASSET = new Asset();
-
     /**
      * Create an instance of the AssetService.
      *

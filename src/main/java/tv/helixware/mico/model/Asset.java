@@ -40,4 +40,14 @@ public class Asset {
     @Column(name = "last_modified_date")
     private DateTime lastModifiedDate;
 
+    protected Asset() {
+    }
+
+    public Asset(final String url, final String guid) {
+
+        this.url = url;
+        this.guid = guid;
+
+    }
+
 }

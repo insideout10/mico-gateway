@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-import tv.helixware.mico.services.AssetService;
+import tv.helixware.mico.model.Asset;
+import tv.helixware.mico.persist.AssetRepository;
 import tv.helixware.mico.services.ItemService;
 import tv.helixware.mico.services.PartService;
 
@@ -26,7 +27,7 @@ public class MicoClientTest {
     private final static String MIME_TYPE = "video/mp4";
 
     @Autowired
-    private AssetService assetService;
+    private AssetRepository assetRepository;
 
     @Autowired
     private ItemService itemService;
@@ -39,7 +40,7 @@ public class MicoClientTest {
 
         // Create a content item, if successful create a content part with the file and then process the annotations.
         itemService
-                .create(AssetService.NULL_ASSET).ifPresent(ci -> partService
+                .create(null).ifPresent(ci -> partService
                 .create(ci, MIME_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", new File(getClass().getClassLoader().getResource("wild_animals.mp4").getFile()))
                 .ifPresent(partService::process));
 
@@ -50,7 +51,7 @@ public class MicoClientTest {
 
         // Create a content item, if successful create a content part with the file and then process the annotations.
         itemService
-                .create(AssetService.NULL_ASSET).ifPresent(ci -> partService
+                .create(null).ifPresent(ci -> partService
                 .create(ci, MIME_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", new File(getClass().getClassLoader().getResource("mohamed.mp4").getFile()))
                 .ifPresent(partService::process));
 
