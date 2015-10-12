@@ -16,7 +16,9 @@ import java.io.Serializable;
  */
 @Data
 @Entity
-public class Fragment implements Serializable {
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "fragment_type")
+public abstract class Fragment implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -55,6 +57,7 @@ public class Fragment implements Serializable {
         this.start = start;
         this.end = end;
         this.part = part;
+
     }
 
 }
