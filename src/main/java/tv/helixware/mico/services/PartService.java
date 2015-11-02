@@ -190,6 +190,38 @@ public class PartService {
          *  * FaceDetectionBody
          */
 
+        /**
+         * Speech-To-Text
+         * QueryService queryService = anno4j
+         .createQueryService(Annotation.class)
+         .addPrefix("mico", "http://www.mico-project.eu/ns/platform/1.0/schema#")
+         .setAnnotationCriteria("oa:hasBody[is-a mico:STTBody]")
+         .setAnnotationCriteria("^oa:hasContent/^oa:hasContentPart", contentItem);
+         */
+
+//        QueryService queryService = Anno4j.getInstance()
+//                .createQueryService(Annotation.class)
+//                .addPrefix("mico", "http://www.mico-project.eu/ns/platform/1.0/schema#")
+//                .setAnnotationCriteria("oa:hasBody[is-a mico:STTBody]")
+//                .setAnnotationCriteria("^oa:hasContent/^oa:hasContentPart", part.getUuid());
+//
+//        final List<Annotation> annotations = queryService.execute();
+//
+//        log.debug("execute over");
+//
+//        annotations.stream().forEach(a -> log.debug(a.toString()));
+//
+//        log.debug("over");
+
+//        QueryService queryService = Anno4j.getInstance()
+//                .createQueryService(Annotation.class)
+//                .addPrefix("mico", "http://www.mico-project.eu/ns/platform/1.0/schema#")
+//                .setAnnotationCriteria("oa:hasBody[is-a mico:STTBody]")
+//                .setAnnotationCriteria("^oa:hasContent/^oa:hasContentPart", contentItem);
+
+//        query(part, "STTBody").stream()
+//                .forEach(a -> log.debug(a.toString()));
+
         final Pattern pattern = Pattern.compile("t=npt:(\\d+),(\\d+)");
 
         // Get the temporal video segmentation fragments.
@@ -250,34 +282,6 @@ public class PartService {
                     }
 
                 });
-
-//        log.info("List of queried annotation objects: \r\n");
-//
-//        log.info(annotationList.size() + " Annotation objects found");
-//
-//        final Pattern pattern = Pattern.compile("t=npt:(\\d+),(\\d+)");
-//
-//        annotationList.stream()
-//                .flatMap(a -> a.getTargets().stream())
-//                .filter(t -> t instanceof SpecificResource)
-//                .map(t -> (SpecificResource) t)
-//                .filter(r -> r.getSelector() instanceof FragmentSelector)
-//                .map(r -> (FragmentSelector) r.getSelector())
-//                .map(FragmentSelector::getValue)
-//                .distinct()
-//                .forEach(v -> {
-//                    final Matcher matcher = pattern.matcher(v);
-//                    if (matcher.find()) {
-//                        log.info(String.format("[ start :: %s ][ end :: %s ]", matcher.group(1), matcher.group(2)));
-//                        final Fragment fragment = new Fragment(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)), part);
-//                        fragmentRepository.save(fragment);
-//                    }
-//                });
-////        }
-
-        // http://demo2.mico-project.eu:8080/broker/status/download?partUri=http://demo2.mico-project.eu:8080/marmotta/956fe00a-d284-4661-9dff-749c94ea8795/0a50acf2-656c-4933-a3f4-2a21c413b5d2&itemUri=http://demo2.mico-project.eu:8080/marmotta/956fe00a-d284-4661-9dff-749c94ea8795
-
-//        final String downloadURL = String.format("http://%s:%s@%s/broker/status/download?partUri=%s&itemUri=%s", username, password, server, URLEncoder.encode(contentPart.getUri(), "UTF-8"), URLEncoder.encode(contentItem.getUri(), "UTF-8"));
 
     }
 
