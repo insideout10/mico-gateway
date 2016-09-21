@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -52,6 +53,10 @@ public class MicoClient {
     private final static String INJECT_SUBMIT_PATH = "inject/submit";
     private final static String STATUS_ITEMS_PATH = "status/items";
 
+    /**
+     * The property name for an item URI in MICO's responses (this has changed over time).
+     */
+    private final static String ITEM_URI = "itemUri";
 
     /**
      * Create an instance of the IngestionService.
@@ -128,14 +133,13 @@ public class MicoClient {
             final JsonNode node = objectMapper.readTree(responseBody);
 
             // If the *uri* field is missing from the JSON return an empty.
-            if (!node.has("uri")) {
-                log.error(String.format("The JSON is invalid [ url :: %s ][ response body :: %s ]", url, responseBody));
+            if (!node.has(ITEM_URI)) {
+                log.error(String.format("The JSON is invalid [ url :: %s ][ response body :: %s ][ missing property :: %s ]", url, responseBody, ITEM_URI));
                 return Optional.empty();
             }
 
             // Get the URI and create a new ContentItem.
-            final String uri = node.get("uri").asText();
-            return Optional.of(createContentItem(asset, uri));
+            return Optional.of(createContentItem(asset, node.get(ITEM_URI).asText()));
 
         } catch (Exception e) {
             log.error(String.format("An error occurred while parsing the response [ url :: %s ]", url));
@@ -157,21 +161,21 @@ public class MicoClient {
 
         try {
             // Build the URI and get the response.
-            final URI uri = new URIBuilder(serverURL + INJECT_ADD_PATH)
+            val uri = new URIBuilder(serverURL + INJECT_ADD_PATH)
                     .setParameter("ci", item.getUri())
                     .setParameter("type", mimeType)
                     .setParameter("name", name)
                     .build();
 
-            final FileEntity entity = new FileEntity(file);
+            val entity = new FileEntity(file);
 
-            final Optional<String> response = post(uri.toString(), Optional.of(entity));
+            val response = post(uri.toString(), Optional.of(entity));
 
             // If the response is empty, we return an empty.
             if (!response.isPresent())
                 return Optional.empty();
 
-            final JsonNode node = objectMapper.readTree(response.get());
+            val node = objectMapper.readTree(response.get());
 
             // If the *uri* field is missing from the JSON return an empty.
             if (!node.has("uri")) {

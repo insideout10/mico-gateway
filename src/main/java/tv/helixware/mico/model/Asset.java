@@ -1,6 +1,6 @@
 package tv.helixware.mico.model;
 
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.Type;
 import org.joda.time.DateTime;
 import org.springframework.data.annotation.CreatedDate;
@@ -13,18 +13,25 @@ import javax.persistence.*;
  *
  * @since 1.0.0
  */
+@Builder
 @Data
 @Entity
+// Generated constructors
+@AllArgsConstructor
+@NoArgsConstructor
+@RequiredArgsConstructor
 public class Asset {
 
     @Id
     @GeneratedValue
     private Long id;
 
+    @NonNull
     @Column(nullable = false, length = 1024)
     private String url;
 
-    @Column(nullable = true, length = 1024)
+    @NonNull
+    @Column(length = 1024)
     private String guid;
 
     @Version
@@ -39,15 +46,5 @@ public class Asset {
     @Type(type = "org.jadira.usertype.dateandtime.joda.PersistentDateTime")
     @Column(name = "last_modified_date")
     private DateTime lastModifiedDate;
-
-    protected Asset() {
-    }
-
-    public Asset(final String url, final String guid) {
-
-        this.url = url;
-        this.guid = guid;
-
-    }
 
 }
