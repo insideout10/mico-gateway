@@ -18,6 +18,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.policy.ExceptionClassifierRetryPolicy;
 import org.springframework.stereotype.Component;
 import tv.helixware.mico.model.Asset;
 import tv.helixware.mico.model.Item;
@@ -53,10 +54,22 @@ public class MicoClient {
     private final static String INJECT_SUBMIT_PATH = "inject/submit";
     private final static String STATUS_ITEMS_PATH = "status/items";
 
+    @Value("${mico.route.id:6}")
+    private String routeId;
+
     /**
      * The property name for an item URI in MICO's responses (this has changed over time).
+     *
+     * @since 0.2.0
      */
     private final static String ITEM_URI = "itemUri";
+
+    /**
+     * The property name for an item URI in MICO's response when adding a content part (yes, it's different from the ITEM_URI!).
+     *
+     * @since 0.2.0
+     */
+    private final static String CONTENT_PART_ITEM_URI = "itemURI";
 
     /**
      * Create an instance of the IngestionService.
@@ -162,7 +175,7 @@ public class MicoClient {
         try {
             // Build the URI and get the response.
             val uri = new URIBuilder(serverURL + INJECT_ADD_PATH)
-                    .setParameter("ci", item.getUri())
+                    .setParameter(ITEM_URI, item.getUri())
                     .setParameter("type", mimeType)
                     .setParameter("name", name)
                     .build();
@@ -178,13 +191,13 @@ public class MicoClient {
             val node = objectMapper.readTree(response.get());
 
             // If the *uri* field is missing from the JSON return an empty.
-            if (!node.has("uri")) {
+            if (!node.has(CONTENT_PART_ITEM_URI)) {
                 log.error(String.format("The JSON is invalid [ url :: %s ][ response body :: %s ]", uri, response.get()));
                 return Optional.empty();
             }
 
             // Get the URI and create a new ContentItem.
-            return Optional.of(createContentPart(item, node.get("uri").asText(), mimeType, name));
+            return Optional.of(createContentPart(item, node.get(CONTENT_PART_ITEM_URI).asText(), mimeType, name));
 
         } catch (URISyntaxException e) {
             log.error(String.format("The URL is invalid [ url :: %s ]", serverURL + INJECT_ADD_PATH), e);
@@ -253,11 +266,21 @@ public class MicoClient {
         // Build the URI and get the response.
         try {
             final URI uri = new URIBuilder(serverURL + INJECT_SUBMIT_PATH)
-                    .setParameter("ci", item.getUri())
+                    .setParameter("item", item.getUri())
+                    .setParameter("routeId", routeId)
                     .build();
 
+            val response = post(uri.toString());
+
+            if (log.isDebugEnabled()) {
+                if (response.isPresent())
+                    log.debug(String.format("Submit response [ %s ]", response.get()));
+                else
+                    log.debug("No response received while submitting an item");
+            }
+
             // If the response is present (although empty), it's a success.
-            return post(uri.toString()).isPresent();
+            return response.isPresent();
 
         } catch (URISyntaxException e) {
             log.error(String.format("An error occurred while submitting a Content Item [ url :: %s ]", serverURL + INJECT_SUBMIT_PATH));
@@ -274,13 +297,25 @@ public class MicoClient {
      */
     public List<CheckStatusResponse> checkStatus(final Item item, final boolean parts) {
 
+        log.trace(String.format("Checking status [ item uri :: %s ]", item.getUri()));
+
+        final URI uri;
+
         try {
+
             // Build the URI and get the response.
-            final URI uri = new URIBuilder(serverURL + STATUS_ITEMS_PATH)
+            uri = new URIBuilder(serverURL + STATUS_ITEMS_PATH)
                     .setParameter("uri", item.getUri())
                     .setParameter("parts", parts ? "true" : "false")
                     .build();
 
+        } catch (Exception e) {
+
+            log.error("Cannot build url", e);
+            return null;
+        }
+
+        try {
             final Optional<String> response = get(uri.toString());
 
             // If the response is empty, return empty.
@@ -292,7 +327,7 @@ public class MicoClient {
             });
 
         } catch (Exception e) {
-            log.error(String.format("An error occurred while parsing a response [ url :: %s ]", serverURL + STATUS_ITEMS_PATH), e);
+            log.error(String.format("An error occurred while parsing a response [ url :: %s ]", uri), e);
         }
 
         return Collections.emptyList();

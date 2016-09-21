@@ -1,5 +1,6 @@
 package tv.helixware.mico.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 import org.hibernate.annotations.Type;
 import org.joda.time.DateTime;
@@ -13,17 +14,21 @@ import javax.persistence.*;
  *
  * @since 1.0.0
  */
-@Builder
 @Data
 @Entity
 // Generated constructors
 @AllArgsConstructor
 @NoArgsConstructor
 @RequiredArgsConstructor
+// JSON configuration: ignore the following properties when creating a new class instance from JSON payloads.
+@JsonIgnoreProperties({"id", "version", "createdDate", "lastModifiedDate"})
 public class Asset {
 
     @Id
     @GeneratedValue
+    // We don't accept IDs from remote requests.
+//    @JsonIgnore
+//    @Setter(onMethod = @__(@JsonIgnore))
     private Long id;
 
     @NonNull

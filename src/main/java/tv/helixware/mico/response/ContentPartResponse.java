@@ -1,10 +1,15 @@
 package tv.helixware.mico.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Data;
+
 import java.util.List;
 
 /**
  * @since 4.2.0
  */
+@Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ContentPartResponse {
 
     private String title;
@@ -16,67 +21,4 @@ public class ContentPartResponse {
     private String uri;
     private String creator;
 
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public List<Object> getTransitions() {
-        return transitions;
-    }
-
-    public void setTransitions(List<Object> transitions) {
-        this.transitions = transitions;
-    }
-
-    public String getCreated() {
-        return created;
-    }
-
-    public void setCreated(String created) {
-        this.created = created;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getUri() {
-        return uri;
-    }
-
-    public void setUri(String uri) {
-        this.uri = uri;
-    }
-
-    public String getCreator() {
-        return creator;
-    }
-
-    public void setCreator(String creator) {
-        this.creator = creator;
-    }
 }

@@ -103,14 +103,7 @@ public class MicoClientTest {
      */
     private Asset asset() {
 
-        return Asset.builder()
-                .id(0L)
-                .url("http://example.org/asset.mp4")
-                .guid(UUID.randomUUID().toString())
-                .version(1L)
-                .createdDate(DateTime.now())
-                .lastModifiedDate(DateTime.now())
-                .build();
+        return new Asset(0L, "http://example.org/asset.mp4", UUID.randomUUID().toString(), 1L, DateTime.now(), DateTime.now());
     }
 
     /**

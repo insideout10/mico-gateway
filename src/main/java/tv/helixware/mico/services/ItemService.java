@@ -1,6 +1,7 @@
 package tv.helixware.mico.services;
 
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tv.helixware.mico.model.Asset;
@@ -44,7 +45,18 @@ public class ItemService {
     public Optional<Item> create(final Asset asset) {
 
         // Return the ContentItem persisted to the database.
-        return client.create(asset).map(itemRepository::save);
+
+        val item = client.create(asset).map(itemRepository::save);
+
+        // Add some trace logging, just in case.
+        if (log.isDebugEnabled()) {
+            if (item.isPresent())
+                log.debug(String.format("Item created [ uri :: %s ]", item.get().getUri()));
+            else
+                log.debug("Item not created");
+        }
+
+        return item;
 
     }
 

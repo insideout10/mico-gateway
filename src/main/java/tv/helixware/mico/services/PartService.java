@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -141,14 +142,27 @@ public class PartService {
                     FileUtils.copyInputStreamToFile(response.getEntity().getContent(), tempFile);
                 }
             }
-            final Optional<Part> contentPart = create(item, mimeType, name, tempFile);
+
+            val part = create(item, mimeType, name, tempFile);
 
             tempFile.delete();
 
-            return contentPart;
+            // Add some trace logging, just in case.
+            if (log.isDebugEnabled()) {
+                if (part.isPresent())
+                    log.debug(String.format("Part created [ uri :: %s ]", part.get().getUri()));
+                else
+                    log.debug("Part not created");
+            }
+
+            return part;
+
         } catch (IOException | URISyntaxException e) {
             log.error("An error occurred", e);
         }
+
+        // If we got here something went wrong.
+        log.error("Error creating part");
 
         return Optional.empty();
 
@@ -315,7 +329,19 @@ public class PartService {
 //                .setBodyCriteria("[is-a mico:" + bodyType + "]");
 
         // executing the query
-        return queryService.execute(Annotation.class);
+
+        try {
+
+            return queryService.execute(Annotation.class);
+
+        } catch (Exception e) {
+
+            log.error(String.format("An error occurred querying the remote service [ 1st criteria :: %s, %s ][ 2nd criteria :: %s ]", ldPath, contentPartId, "[is-a mico:" + bodyType + "]"), e);
+
+        }
+
+        // An error occurred if we got here, let's return an empty list then.
+        return Collections.emptyList();
     }
 
     private List<FragmentSelector> getTemporalFragment(final Annotation faceAnnotation) throws RepositoryException, QueryEvaluationException, MalformedQueryException, ParseException, RepositoryConfigException {
