@@ -18,10 +18,11 @@ import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfigException;
-import org.openrdf.repository.sparql.SPARQLRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import tv.helixware.mico.factories.QueryServiceFactory;
+import tv.helixware.mico.helpers.AnnotationHelper;
 import tv.helixware.mico.model.FaceFragment;
 import tv.helixware.mico.model.Item;
 import tv.helixware.mico.model.Part;
@@ -42,17 +43,20 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-//import com.github.anno4j.model.impl.target.SpecificResource;
-
 /**
- * @since 1.0.0
+ * @since 0.1.0
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class PartService {
 
-    private final Anno4j anno4j;
+    /**
+     * A {@link QueryServiceFactory} instance to create {@link QueryService}s.
+     *
+     * @since 0.2.0
+     */
+    private final QueryServiceFactory queryServiceFactory;
 
     private final MicoClient client;
 
@@ -69,45 +73,20 @@ public class PartService {
     private final static Pattern XYWH_PATTERN = Pattern.compile("#xywh=(\\d+),(\\d+),(\\d+),(\\d+)");
     private final static Pattern NPT_PATTERN = Pattern.compile("npt:(\\d+),(\\d+)");
 
-//    /**
-//     * Create an instance of the ContentPartService.
-//     *
-//     * @param client
-//     * @since 1.0.0
-//     */
-//    @Autowired
-//    public PartService(final MicoClient client,
-//                       final PartRepository partRepository,
-//                       final SequenceFragmentRepository sequenceFragmentRepository,
-//                       final FaceFragmentRepository faceFragmentRepository,
-//                        final String applicationKey,
-//                        final String applicationSecret) {
-//
-//        this.client = client;
-//
-//        this.partRepository = partRepository;
-//        this.sequenceFragmentRepository = sequenceFragmentRepository;
-//        this.faceFragmentRepository = faceFragmentRepository;
-//
-//        this.applicationKey = applicationKey;
-//        this.applicationSecret = applicationSecret;
-//
-//    }
-
     /**
      * Create a {@link Part} with the provided file.
      *
      * @param item
-     * @param mimeType
+     * @param micoTYpe
      * @param name
      * @param file
      * @return
      * @since 1.0.0
      */
-    public Optional<Part> create(final Item item, final String mimeType, final String name, final File file) {
+    public Optional<Part> create(final Item item, final String micoTYpe, final String name, final File file) {
 
         // Return the content part persisted to the database.
-        return client.addContentPart(item, mimeType, name, file)
+        return client.addContentPart(item, micoTYpe, name, file)
                 .map(partRepository::save);
 
     }
@@ -116,13 +95,13 @@ public class PartService {
      * Create a {@link Part} using the file at the specified URL.
      *
      * @param item
-     * @param mimeType
+     * @param micoType
      * @param name
      * @param url
      * @return
      * @since 1.0.0
      */
-    public Optional<Part> create(final Item item, final String mimeType, final String name, final URL url) {
+    public Optional<Part> create(final Item item, final String micoType, final String name, final URL url) {
 
         try {
 
@@ -143,7 +122,7 @@ public class PartService {
                 }
             }
 
-            val part = create(item, mimeType, name, tempFile);
+            val part = create(item, micoType, name, tempFile);
 
             tempFile.delete();
 
@@ -250,7 +229,7 @@ public class PartService {
 
         // Get the temporal video segmentation fragments.
         query(part, "TVSShotBoundaryFrameBody").stream()
-                .flatMap(a -> a.getTargets().stream())
+//                .flatMap(a -> AnnotationHelper.target(a))
                 .filter(t -> t instanceof SpecificResource)
                 .map(t -> (SpecificResource) t)
                 .filter(r -> r.getSelector() instanceof FragmentSelector)
@@ -270,7 +249,7 @@ public class PartService {
         query(part, "FaceDetectionBody").forEach(a -> {
             log.info(String.format("FaceAnnotation :: %s", a.toString()));
 
-            final SpecificResource target = (SpecificResource) a.getTargets().stream().findFirst().get();
+            final SpecificResource target = (SpecificResource)AnnotationHelper.target(a);
             final FragmentSelector selector = (FragmentSelector) target.getSelector();
             log.info(String.format(" * Selector :: %s", selector));
 
@@ -312,19 +291,13 @@ public class PartService {
 
 //        final Anno4j anno4j = Anno4j.getInstance();
 
-        // Configuring the repository for Anno4j, but using the default Anno4j IDGenerator
-        final SPARQLRepository repository = new SPARQLRepository("http://" + client.getServer() + "/marmotta/sparql/select", "http://" + client.getServer() + "/marmotta/sparql/update");
-        repository.setUsernameAndPassword(client.getUsername(), client.getPassword());
-        repository.initialize();
-        anno4j.setRepository(repository);
-
         final String contentPartId = part.getUri();
-        final String ldPath = "^mico:hasContent/^mico:hasContentPart/mico:hasContentPart";
+        final String ldPath = "^mmm:hasContent/^mmm:hasContentPart/mmm:hasContentPart";
 
         // Getting the QueryService to query for Annotation objects, setting the mico namespace and adding a criteria.
-        final QueryService queryService = createQueryService()
+        final QueryService queryService = queryServiceFactory.create()
                 .addCriteria(ldPath, contentPartId)
-                .addCriteria("[is-a mico:" + bodyType + "]");
+                .addCriteria("mmm:hasBody[is-a mmmterms:" + bodyType + "]");
 //                .setAnnotationCriteria(ldPath, contentPartId)
 //                .setBodyCriteria("[is-a mico:" + bodyType + "]");
 
@@ -336,7 +309,7 @@ public class PartService {
 
         } catch (Exception e) {
 
-            log.error(String.format("An error occurred querying the remote service [ 1st criteria :: %s, %s ][ 2nd criteria :: %s ]", ldPath, contentPartId, "[is-a mico:" + bodyType + "]"), e);
+            log.error(String.format("An error occurred querying the remote service [ 1st criteria :: %s, %s ][ 2nd criteria :: %s ]", ldPath, contentPartId, "[is-a mmmterms:" + bodyType + "]"), e);
 
         }
 
@@ -346,37 +319,39 @@ public class PartService {
 
     private List<FragmentSelector> getTemporalFragment(final Annotation faceAnnotation) throws RepositoryException, QueryEvaluationException, MalformedQueryException, ParseException, RepositoryConfigException {
 
-        final List<Annotation> anShot = createQueryService()
-                .addCriteria("oa:hasBody[is-a mico:TVSShotBoundaryFrameBody] | oa:hasBody[is-a mico:TVSKeyFrameBody]")
-                .addCriteria("^mico:hasContent/^dct:source/^oa:hasSource/^oa:hasTarget", faceAnnotation.getResource().toString())
+        final List<Annotation> anShot = queryServiceFactory.create()
+                .addCriteria("mmm:hasBody[is-a mmmterms:TVSShotBoundaryFrameBody] | mmmterms:hasBody[is-a mmmterms:TVSKeyFrameBody]")
+                .addCriteria("^mmm:hasContent/^dct:source/^oa:hasSource/^oa:hasTarget", faceAnnotation.getResource().toString())
 //                .setAnnotationCriteria("oa:hasBody[is-a mico:TVSShotBoundaryFrameBody] | oa:hasBody[is-a mico:TVSKeyFrameBody]")
 //                .setAnnotationCriteria("^mico:hasContent/^dct:source/^oa:hasSource/^oa:hasTarget", faceAnnotation.getResource().toString())
                 .execute(Annotation.class);
 
         final List<FragmentSelector> results = new ArrayList<>();
-        for (final Annotation anno : anShot) {
-            val target = anno.getTargets().stream().findFirst().get();
-            results.add((FragmentSelector) ((SpecificResource) target).getSelector());
+        for (final Annotation annotation : anShot) {
+            final SpecificResource resource = (SpecificResource)AnnotationHelper.target(annotation);
+            results.add((FragmentSelector) resource.getSelector());
 //            results.add((FragmentSelector) ((SpecificResource) anno.getTarget()).getSelector());
         }
 
         return results;
     }
 
-    /**
-     * Create a {@link QueryService} instance and configure it to the {@link Annotation} class with the default prefixes.
-     *
-     * @return A {@link QueryService} instance.
-     * @since 1.0.0
-     */
-    private QueryService createQueryService() throws RepositoryConfigException, RepositoryException {
-
-//        final Anno4j anno4j = Anno4j.getInstance();
-
-        return anno4j.createQueryService()
-                .addPrefix("mico", "http://www.mico-project.eu/ns/platform/1.0/schema#")
-                .addPrefix("dct", "http://purl.org/dc/terms/");
-
-    }
+//    /**
+//     * Create a {@link QueryService} instance and configure it to the {@link Annotation} class with the default prefixes.
+//     *
+//     * @return A {@link QueryService} instance.
+//     * @since 1.0.0
+//     */
+//    private QueryService createQueryService() throws RepositoryConfigException, RepositoryException {
+//
+////        final Anno4j anno4j = Anno4j.getInstance();
+//
+//        return anno4j.createQueryService()
+//                .addPrefix(MMM.PREFIX, MMM.NS)
+//                .addPrefix(MMMTERMS.PREFIX, MMMTERMS.NS)
+//                .addPrefix("mico", "http://www.mico-project.eu/ns/platform/1.0/schema#")
+//                .addPrefix("dct", "http://purl.org/dc/terms/");
+//
+//    }
 
 }

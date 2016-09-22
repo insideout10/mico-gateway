@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 @WebAppConfiguration
 public class MicoClientTest {
 
-    private final static String MIME_TYPE = "video/mp4";
+    private final static String MICO_TYPE = "mico:Video";
 
     @Autowired
     private MicoClient client;
@@ -48,7 +48,7 @@ public class MicoClientTest {
      * @since 0.2.0
      */
     @Test
-    public void testCreate() {
+    public void test() {
 
         // Generate a fake asset.
         val asset = asset();
@@ -66,10 +66,22 @@ public class MicoClientTest {
         val name = RandomStringUtils.randomAlphanumeric(12) + ".mp4";
 
         // Add the content part to the item.
-        val optPart = client.addContentPart(item, MIME_TYPE, name, wildAnimalsFile());
+        val optPart = client.addContentPart(item, MICO_TYPE, name, wildAnimalsFile());
 
         // Check if the part has been added.
         assertTrue(optPart.isPresent());
+
+        // Get the part.
+        val part = optPart.get();
+
+        // Submit the item.
+        val result = client.submit(item);
+
+        // Check that submission was positive.
+        assertTrue(result);
+
+        // Finally process the part.
+        partService.process(part);
 
     }
 
@@ -79,7 +91,7 @@ public class MicoClientTest {
         // Create a content item, if successful create a content part with the file and then process the annotations.
         itemService
                 .create(null).ifPresent(ci -> partService
-                .create(ci, MIME_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", new File(getClass().getClassLoader().getResource("wild_animals.mp4").getFile()))
+                .create(ci, MICO_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", new File(getClass().getClassLoader().getResource("wild_animals.mp4").getFile()))
                 .ifPresent(partService::process));
 
     }
@@ -90,7 +102,7 @@ public class MicoClientTest {
         // Create a content item, if successful create a content part with the file and then process the annotations.
         itemService
                 .create(null).ifPresent(ci -> partService
-                .create(ci, MIME_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", new File(getClass().getClassLoader().getResource("mohamed.mp4").getFile()))
+                .create(ci, MICO_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", new File(getClass().getClassLoader().getResource("mohamed.mp4").getFile()))
                 .ifPresent(partService::process));
 
     }

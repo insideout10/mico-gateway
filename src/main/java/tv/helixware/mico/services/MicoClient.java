@@ -40,11 +40,6 @@ import java.util.Optional;
 @Component
 public class MicoClient {
 
-    private final String server;
-    private final String username;
-    private final String password;
-    private final String path;
-
     private final String serverURL;
 
     private final ObjectMapper objectMapper;
@@ -82,30 +77,9 @@ public class MicoClient {
     @Autowired
     public MicoClient(@Value("${mico.server}") final String server, @Value("${mico.path:broker/}") final String path, @Value("${mico.username}") final String username, @Value("${mico.password}") final String password) {
 
-        this.server = server;
-        this.path = path;
-        this.username = username;
-        this.password = password;
-
         this.serverURL = String.format("http://%s:%s@%s/%s", username, password, server, path);
 
         this.objectMapper = new ObjectMapper();
-    }
-
-    public String getServer() {
-        return server;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     /**
@@ -116,7 +90,9 @@ public class MicoClient {
      */
     public Optional<Item> create(final Asset asset) {
 
-        final String url = serverURL + INJECT_CREATE_PATH;
+        val url = serverURL + INJECT_CREATE_PATH;
+
+        log.debug(String.format("Creating item [ url :: %s ]", url));
 
         // Prepare the client and send the POST request.
         final CloseableHttpClient client = HttpClients.createDefault();
@@ -165,24 +141,26 @@ public class MicoClient {
      * Add a {@link Part} to a {@link Item}.
      *
      * @param item
-     * @param mimeType
+     * @param micoType
      * @param name
      * @return
      * @since 1.0.0
      */
-    public Optional<Part> addContentPart(final Item item, final String mimeType, final String name, final File file) {
+    public Optional<Part> addContentPart(final Item item, final String micoType, final String name, final File file) {
 
         try {
             // Build the URI and get the response.
-            val uri = new URIBuilder(serverURL + INJECT_ADD_PATH)
+            val url = new URIBuilder(serverURL + INJECT_ADD_PATH)
                     .setParameter(ITEM_URI, item.getUri())
-                    .setParameter("type", mimeType)
+                    .setParameter("type", micoType)
                     .setParameter("name", name)
                     .build();
 
+            log.debug(String.format("Creating part [ url :: %s ]", url));
+
             val entity = new FileEntity(file);
 
-            val response = post(uri.toString(), Optional.of(entity));
+            val response = post(url.toString(), Optional.of(entity));
 
             // If the response is empty, we return an empty.
             if (!response.isPresent())
@@ -192,12 +170,12 @@ public class MicoClient {
 
             // If the *uri* field is missing from the JSON return an empty.
             if (!node.has(CONTENT_PART_ITEM_URI)) {
-                log.error(String.format("The JSON is invalid [ url :: %s ][ response body :: %s ]", uri, response.get()));
+                log.error(String.format("The JSON is invalid [ url :: %s ][ response body :: %s ]", url, response.get()));
                 return Optional.empty();
             }
 
             // Get the URI and create a new ContentItem.
-            return Optional.of(createContentPart(item, node.get(CONTENT_PART_ITEM_URI).asText(), mimeType, name));
+            return Optional.of(createContentPart(item, node.get(CONTENT_PART_ITEM_URI).asText(), micoType, name));
 
         } catch (URISyntaxException e) {
             log.error(String.format("The URL is invalid [ url :: %s ]", serverURL + INJECT_ADD_PATH), e);
@@ -265,12 +243,14 @@ public class MicoClient {
 
         // Build the URI and get the response.
         try {
-            final URI uri = new URIBuilder(serverURL + INJECT_SUBMIT_PATH)
+            val url = new URIBuilder(serverURL + INJECT_SUBMIT_PATH)
                     .setParameter("item", item.getUri())
-                    .setParameter("routeId", routeId)
+                    .setParameter("route", routeId)
                     .build();
 
-            val response = post(uri.toString());
+            log.debug(String.format("Submitting item [ url :: %s ]", url));
+
+            val response = post(url.toString());
 
             if (log.isDebugEnabled()) {
                 if (response.isPresent())
@@ -297,14 +277,14 @@ public class MicoClient {
      */
     public List<CheckStatusResponse> checkStatus(final Item item, final boolean parts) {
 
-        log.trace(String.format("Checking status [ item uri :: %s ]", item.getUri()));
+        log.debug(String.format("Checking status [ item uri :: %s ]", item.getUri()));
 
-        final URI uri;
+        final URI url;
 
         try {
 
             // Build the URI and get the response.
-            uri = new URIBuilder(serverURL + STATUS_ITEMS_PATH)
+            url = new URIBuilder(serverURL + STATUS_ITEMS_PATH)
                     .setParameter("uri", item.getUri())
                     .setParameter("parts", parts ? "true" : "false")
                     .build();
@@ -316,7 +296,10 @@ public class MicoClient {
         }
 
         try {
-            final Optional<String> response = get(uri.toString());
+
+            log.debug(String.format("Checking status [ url :: %s ]", url));
+
+            val response = get(url.toString());
 
             // If the response is empty, return empty.
             if (!response.isPresent())
@@ -327,7 +310,7 @@ public class MicoClient {
             });
 
         } catch (Exception e) {
-            log.error(String.format("An error occurred while parsing a response [ url :: %s ]", uri), e);
+            log.error(String.format("An error occurred while parsing a response [ url :: %s ]", url), e);
         }
 
         return Collections.emptyList();

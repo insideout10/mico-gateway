@@ -22,7 +22,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <anno4j.version>2.3.0</anno4j.version>
+        <!--<anno4j.version>2.3.0</anno4j.version>-->
+        <mmm-anno4j.version>3.0.3-SNAPSHOT</mmm-anno4j.version>
         <usertype.version>5.0.0.GA</usertype.version>
 
         <!-- Do not update to 2.x -->
@@ -89,16 +90,17 @@
             <version>${xml-apis.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.github.anno4j</groupId>
-            <artifactId>anno4j-core</artifactId>
-            <version>${anno4j.version}</version>
-        </dependency>
+        <!-- Not needed anymore, is included with eu.mico-project.platform:mmm-anno4j -->
+        <!--<dependency>-->
+            <!--<groupId>com.github.anno4j</groupId>-->
+            <!--<artifactId>anno4j-core</artifactId>-->
+            <!--<version>${anno4j.version}</version>-->
+        <!--</dependency>-->
 
         <dependency>
-            <groupId>com.github.anno4j</groupId>
-            <artifactId>anno4j-ontologies-mico</artifactId>
-            <version>${anno4j.version}</version>
+            <groupId>eu.mico-project.platform</groupId>
+            <artifactId>mmm-anno4j</artifactId>
+            <version>${mmm-anno4j.version}</version>
         </dependency>
 
         <dependency>
@@ -135,5 +137,19 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>mico.public</id>
+            <name>MICO Maven Proxy</name>
+            <url>http://mvn.mico-project.eu/content/groups/public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
 </project>

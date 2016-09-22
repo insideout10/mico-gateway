@@ -16,7 +16,7 @@ import java.net.URL;
 @Service
 public class AssetService {
 
-    private final static String MIME_TYPE = "video/mp4";
+    private final static String MICO_TYPE = "mico:Video";
 
     private final ItemService itemService;
     private final PartService partService;
@@ -54,7 +54,7 @@ public class AssetService {
 
         // Create a content item, if successful create a content part with the file and then process the annotations.
         itemService.create(asset).ifPresent(ci -> partService
-                .create(ci, MIME_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", url)
+                .create(ci, MICO_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", url)
                 .ifPresent(cp -> {
                     itemService.submit(ci); // Submit the content item.
                     partService.process(cp); // Process the results for the content part.

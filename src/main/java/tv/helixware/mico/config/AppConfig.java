@@ -1,8 +1,11 @@
 package tv.helixware.mico.config;
 
 import com.github.anno4j.Anno4j;
+import lombok.val;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfigException;
+import org.openrdf.repository.sparql.SPARQLRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +23,18 @@ import java.util.concurrent.Executors;
 @Configuration
 @EnableJpaAuditing
 public class AppConfig {
+
+    @Value("${mico.server}")
+    private String server;
+
+    @Value("${mico.path:broker/}")
+    private String path;
+
+    @Value("${mico.username}")
+    private String username;
+
+    @Value("${mico.password}")
+    private String password;
 
     /**
      * Make the application events asynchronous.
@@ -48,7 +63,25 @@ public class AppConfig {
     @Bean
     public Anno4j anno4j() throws RepositoryConfigException, RepositoryException {
 
-        return new Anno4j();
+        return new Anno4j(repository());
+    }
+
+    /**
+     * Get a {@link Repository} for {@link Anno4j}.
+     *
+     * @return A {@link Repository} instance set using the server/username/password configuration.
+     * @throws RepositoryException
+     * @since 0.2.0
+     */
+    @Bean
+    public Repository repository() throws RepositoryException {
+
+        // Configuring the repository for Anno4j, but using the default Anno4j IDGenerator
+        val repository = new SPARQLRepository("http://" + server + "/marmotta/sparql/select", "http://" + server + "/marmotta/sparql/update");
+        repository.setUsernameAndPassword(username, password);
+        repository.initialize();
+
+        return repository;
     }
 
 }
