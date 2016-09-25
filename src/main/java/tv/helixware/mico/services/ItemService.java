@@ -11,7 +11,7 @@ import tv.helixware.mico.persist.ItemRepository;
 import java.util.Optional;
 
 /**
- * @since 1.0.0
+ * @since 0.1.0
  */
 @Slf4j
 @Service
@@ -25,7 +25,7 @@ public class ItemService {
      * Create an instance of the ContentItemService.
      *
      * @param client
-     * @since 1.0.0
+     * @since 0.1.0
      */
     @Autowired
     public ItemService(final MicoClient client, final ItemRepository itemRepository) {
@@ -40,7 +40,7 @@ public class ItemService {
      * Crete a {@link Item} using the {@link MicoClient}.
      *
      * @return
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public Optional<Item> create(final Asset asset) {
 
@@ -65,7 +65,7 @@ public class ItemService {
      *
      * @param item
      * @return
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public boolean submit(final Item item) {
 

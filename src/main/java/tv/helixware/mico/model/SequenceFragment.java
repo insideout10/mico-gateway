@@ -8,7 +8,7 @@ import javax.persistence.Entity;
 /**
  * Represents a temporal video sequence fragment.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 @Data
 @Entity
@@ -25,7 +25,7 @@ public class SequenceFragment extends Fragment {
      * @param start The start time in seconds.
      * @param end   The end time in seconds.
      * @param part  The {@link Part} this fragments refers to.
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public SequenceFragment(Long start, Long end, Part part) {
 

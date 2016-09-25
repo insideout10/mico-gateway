@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 /**
  * Enable JPA auditing for Entity annotations such as createdAt.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 @Configuration
 @EnableJpaAuditing
@@ -41,7 +41,7 @@ public class AppConfig {
      *
      * @param maxThreads
      * @return
-     * @since 1.0.0
+     * @since 0.1.0
      */
     @Bean
     public ApplicationEventMulticaster applicationEventMulticaster(@Value("${spring.events.max-threads:10}") final Integer maxThreads) {

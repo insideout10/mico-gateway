@@ -6,7 +6,7 @@ import tv.helixware.mico.model.Asset;
 /**
  * Provides persistence and REST (via Spring Data REST) access to {@link Asset}s.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 public interface AssetRepository extends PagingAndSortingRepository<Asset, Long> {
 

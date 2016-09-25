@@ -1,10 +1,10 @@
 package tv.helixware.mico.services;
 
-import com.github.anno4j.Anno4j;
 import com.github.anno4j.model.Annotation;
 import com.github.anno4j.model.impl.selector.FragmentSelector;
 import com.github.anno4j.model.impl.targets.SpecificResource;
 import com.github.anno4j.querying.QueryService;
+import eu.mico.platform.anno4j.model.PartMMM;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -21,6 +21,7 @@ import org.openrdf.repository.config.RepositoryConfigException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tv.helixware.mico.factories.QueryServiceFactory;
 import tv.helixware.mico.helpers.AnnotationHelper;
 import tv.helixware.mico.model.FaceFragment;
@@ -81,7 +82,7 @@ public class PartService {
      * @param name
      * @param file
      * @return
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public Optional<Part> create(final Item item, final String micoTYpe, final String name, final File file) {
 
@@ -99,7 +100,7 @@ public class PartService {
      * @param name
      * @param url
      * @return
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public Optional<Part> create(final Item item, final String micoType, final String name, final URL url) {
 
@@ -151,8 +152,9 @@ public class PartService {
      * Process the {@link Part} by saving the related annotations.
      *
      * @param part
-     * @since 1.0.0
+     * @since 0.1.0
      */
+    @Transactional
     public void process(final Part part) {
 
         blockUntilComplete(client, part.getItem());
@@ -247,41 +249,47 @@ public class PartService {
 
         // Running the prototype for insideout
         query(part, "FaceDetectionBody").forEach(a -> {
+
             log.info(String.format("FaceAnnotation :: %s", a.toString()));
 
-            final SpecificResource target = (SpecificResource)AnnotationHelper.target(a);
-            final FragmentSelector selector = (FragmentSelector) target.getSelector();
-            log.info(String.format(" * Selector :: %s", selector));
+            a.getTarget().stream()
+                    .map(t -> (SpecificResource) t)
+                    .forEach(target -> {
+                        // final SpecificResource target = (SpecificResource) AnnotationHelper.target(a);
 
-            final Matcher xywhMatcher = XYWH_PATTERN.matcher(selector.getValue());
+                        final FragmentSelector selector = (FragmentSelector) target.getSelector();
+                        log.info(String.format(" * Selector :: %s", selector));
 
-            if (xywhMatcher.find()) {
+                        final Matcher xywhMatcher = XYWH_PATTERN.matcher(selector.getValue());
 
-                final Long x = Long.valueOf(xywhMatcher.group(1));
-                final Long y = Long.valueOf(xywhMatcher.group(2));
-                final Long w = Long.valueOf(xywhMatcher.group(3));
-                final Long h = Long.valueOf(xywhMatcher.group(4));
+                        if (xywhMatcher.find()) {
 
-                // This is required only when the server is configured with Face Detection (video-keyframes).
-                try {
-                    getTemporalFragment(a).forEach(f -> {
+                            final Long x = Long.valueOf(xywhMatcher.group(1));
+                            final Long y = Long.valueOf(xywhMatcher.group(2));
+                            final Long w = Long.valueOf(xywhMatcher.group(3));
+                            final Long h = Long.valueOf(xywhMatcher.group(4));
 
-                        final Matcher nptMatcher = NPT_PATTERN.matcher(f.getValue());
+                            // This is required only when the server is configured with Face Detection (video-keyframes).
+                            try {
+                                getTemporalFragment(a).forEach(f -> {
 
-                        if (nptMatcher.find()) {
-                            final Long start = Long.valueOf(nptMatcher.group(1));
-                            final Long end = Long.valueOf(nptMatcher.group(2));
+                                    final Matcher nptMatcher = NPT_PATTERN.matcher(f.getValue());
 
-                            faceFragmentRepository.save(new FaceFragment(start, end, x, y, w, h, part));
+                                    if (nptMatcher.find()) {
+                                        final Long start = Long.valueOf(nptMatcher.group(1));
+                                        final Long end = Long.valueOf(nptMatcher.group(2));
 
-                            log.info(String.format(" ** TemporalFragment :: %s ", f));
+                                        faceFragmentRepository.save(new FaceFragment(start, end, x, y, w, h, part));
+
+                                        log.info(String.format(" ** TemporalFragment :: %s ", f));
+                                    }
+                                });
+                            } catch (RepositoryConfigException | RepositoryException | QueryEvaluationException | MalformedQueryException | ParseException e) {
+                                e.printStackTrace();
+                            }
+
                         }
                     });
-                } catch (RepositoryConfigException | RepositoryException | QueryEvaluationException | MalformedQueryException | ParseException e) {
-                    e.printStackTrace();
-                }
-
-            }
 
         });
 
@@ -292,11 +300,11 @@ public class PartService {
 //        final Anno4j anno4j = Anno4j.getInstance();
 
         final String contentPartId = part.getUri();
-        final String ldPath = "^mmm:hasContent/^mmm:hasContentPart/mmm:hasContentPart";
+//        final String ldPath = "^mmm:hasContent/^mmm:hasContentPart/mmm:hasContentPart";
 
         // Getting the QueryService to query for Annotation objects, setting the mico namespace and adding a criteria.
         final QueryService queryService = queryServiceFactory.create()
-                .addCriteria(ldPath, contentPartId)
+                .addCriteria("^mmm:hasPart", contentPartId)
                 .addCriteria("mmm:hasBody[is-a mmmterms:" + bodyType + "]");
 //                .setAnnotationCriteria(ldPath, contentPartId)
 //                .setBodyCriteria("[is-a mico:" + bodyType + "]");
@@ -309,7 +317,7 @@ public class PartService {
 
         } catch (Exception e) {
 
-            log.error(String.format("An error occurred querying the remote service [ 1st criteria :: %s, %s ][ 2nd criteria :: %s ]", ldPath, contentPartId, "[is-a mmmterms:" + bodyType + "]"), e);
+            log.error(String.format("An error occurred querying the remote service [ 1st criteria :: %s, %s ][ 2nd criteria :: %s ]", "^mmm:hasPart", contentPartId, "[is-a mmmterms:" + bodyType + "]"), e);
 
         }
 
@@ -319,16 +327,20 @@ public class PartService {
 
     private List<FragmentSelector> getTemporalFragment(final Annotation faceAnnotation) throws RepositoryException, QueryEvaluationException, MalformedQueryException, ParseException, RepositoryConfigException {
 
-        final List<Annotation> anShot = queryServiceFactory.create()
-                .addCriteria("mmm:hasBody[is-a mmmterms:TVSShotBoundaryFrameBody] | mmmterms:hasBody[is-a mmmterms:TVSKeyFrameBody]")
-                .addCriteria("^mmm:hasContent/^dct:source/^oa:hasSource/^oa:hasTarget", faceAnnotation.getResource().toString())
+        final List<PartMMM> parts = queryServiceFactory.create()
+
+                .addCriteria("^mmm:hasPart", faceAnnotation.getResource().toString()) // Where itemID is the ID of your item
+                .addCriteria("mmm:hasBody[is-a mmmterms:TVSShotBoundaryFrameBody] | mmm:hasBody[is-a mmmterms:TVSKeyFrameBody]")
+
+//                .addCriteria("mmm:hasBody[is-a mmmterms:TVSShotBoundaryFrameBody] | mmmterms:hasBody[is-a mmmterms:TVSKeyFrameBody]")
+//                .addCriteria("^mmm:hasContent/^dct:source/^oa:hasSource/^oa:hasTarget", faceAnnotation.getResource().toString())
 //                .setAnnotationCriteria("oa:hasBody[is-a mico:TVSShotBoundaryFrameBody] | oa:hasBody[is-a mico:TVSKeyFrameBody]")
 //                .setAnnotationCriteria("^mico:hasContent/^dct:source/^oa:hasSource/^oa:hasTarget", faceAnnotation.getResource().toString())
-                .execute(Annotation.class);
+                .execute(PartMMM.class);
 
         final List<FragmentSelector> results = new ArrayList<>();
-        for (final Annotation annotation : anShot) {
-            final SpecificResource resource = (SpecificResource)AnnotationHelper.target(annotation);
+        for (final Annotation annotation : parts) {
+            final SpecificResource resource = (SpecificResource) AnnotationHelper.target(annotation);
             results.add((FragmentSelector) resource.getSelector());
 //            results.add((FragmentSelector) ((SpecificResource) anno.getTarget()).getSelector());
         }
@@ -340,7 +352,7 @@ public class PartService {
 //     * Create a {@link QueryService} instance and configure it to the {@link Annotation} class with the default prefixes.
 //     *
 //     * @return A {@link QueryService} instance.
-//     * @since 1.0.0
+//     * @since 0.1.0
 //     */
 //    private QueryService createQueryService() throws RepositoryConfigException, RepositoryException {
 //

@@ -8,7 +8,7 @@ import javax.persistence.Entity;
 /**
  * Represents a video fragment with a face.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 @Data
 @Entity

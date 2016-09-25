@@ -12,7 +12,7 @@ import javax.persistence.*;
 /**
  * Represents an asset at a specified location.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 @Data
 @Entity

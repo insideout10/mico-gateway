@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * @since 1.0.0
+ * @since 0.1.0
  */
 @Slf4j
 @Component
@@ -64,7 +64,7 @@ public class MicoClient {
      *
      * @since 0.2.0
      */
-    private final static String CONTENT_PART_ITEM_URI = "itemURI";
+    private final static String CONTENT_PART_ITEM_URI = "itemUri";
 
     /**
      * Create an instance of the IngestionService.
@@ -72,7 +72,7 @@ public class MicoClient {
      * @param server   The MICO server name.
      * @param username The username to access the server.
      * @param password The password to access the server.
-     * @since 1.0.0
+     * @since 0.1.0
      */
     @Autowired
     public MicoClient(@Value("${mico.server}") final String server, @Value("${mico.path:broker/}") final String path, @Value("${mico.username}") final String username, @Value("${mico.password}") final String password) {
@@ -86,7 +86,7 @@ public class MicoClient {
      * Create a {@link Item}.
      *
      * @return
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public Optional<Item> create(final Asset asset) {
 
@@ -144,7 +144,7 @@ public class MicoClient {
      * @param micoType
      * @param name
      * @return
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public Optional<Part> addContentPart(final Item item, final String micoType, final String name, final File file) {
 
@@ -193,7 +193,7 @@ public class MicoClient {
 //     * @param mimeType
 //     * @param name
 //     * @return
-//     * @since 1.0.0
+//     * @since 0.1.0
 //     */
 //    public Optional<ContentPart> addContentPart(final ContentItem contentItem, final String mimeType, final String name, final InputStream stream) {
 //
@@ -237,7 +237,7 @@ public class MicoClient {
      * Submit the {@link Item} for processing.
      *
      * @param item
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public boolean submit(final Item item) {
 
@@ -273,7 +273,7 @@ public class MicoClient {
      * @param item
      * @param parts
      * @return
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public List<CheckStatusResponse> checkStatus(final Item item, final boolean parts) {
 
@@ -323,7 +323,7 @@ public class MicoClient {
      *
      * @param uri The ContentItem URI as returned by MICO.
      * @return A ContentItem instance
-     * @since 1.0.0
+     * @since 0.1.0
      */
     private Item createContentItem(final Asset asset, final String uri) {
 
@@ -338,7 +338,7 @@ public class MicoClient {
      *
      * @param uri The ContentPart URI as returned by MICO.
      * @return A ContentPart instance.
-     * @since 1.0.0
+     * @since 0.1.0
      */
     private Part createContentPart(final Item item, final String uri, final String mimeType, final String name) {
 

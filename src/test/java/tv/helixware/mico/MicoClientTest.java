@@ -13,6 +13,8 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import tv.helixware.mico.model.Asset;
 import tv.helixware.mico.model.Item;
 import tv.helixware.mico.model.Part;
+import tv.helixware.mico.persist.AssetRepository;
+import tv.helixware.mico.persist.FragmentRepository;
 import tv.helixware.mico.services.ItemService;
 import tv.helixware.mico.services.MicoClient;
 import tv.helixware.mico.services.PartService;
@@ -23,7 +25,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @since 1.0.0
+ * @since 0.1.0
  */
 @Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -42,13 +44,15 @@ public class MicoClientTest {
     @Autowired
     private PartService partService;
 
+    @Autowired
+    private FragmentRepository fragmentRepository;
+
     /**
      * Test creating a MICO {@link Item} and a {@link Part}.
      *
      * @since 0.2.0
      */
-    @Test
-    public void test() {
+    public void test(File file) {
 
         // Generate a fake asset.
         val asset = asset();
@@ -66,7 +70,7 @@ public class MicoClientTest {
         val name = RandomStringUtils.randomAlphanumeric(12) + ".mp4";
 
         // Add the content part to the item.
-        val optPart = client.addContentPart(item, MICO_TYPE, name, wildAnimalsFile());
+        val optPart = client.addContentPart(item, MICO_TYPE, name, file);
 
         // Check if the part has been added.
         assertTrue(optPart.isPresent());
@@ -88,22 +92,14 @@ public class MicoClientTest {
     @Test
     public void testWildAnimals() throws Exception {
 
-        // Create a content item, if successful create a content part with the file and then process the annotations.
-        itemService
-                .create(null).ifPresent(ci -> partService
-                .create(ci, MICO_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", new File(getClass().getClassLoader().getResource("wild_animals.mp4").getFile()))
-                .ifPresent(partService::process));
+        test(wildAnimalsFile());
 
     }
 
     @Test
     public void testMohamed() throws Exception {
 
-        // Create a content item, if successful create a content part with the file and then process the annotations.
-        itemService
-                .create(null).ifPresent(ci -> partService
-                .create(ci, MICO_TYPE, RandomStringUtils.randomAlphanumeric(12) + ".mp4", new File(getClass().getClassLoader().getResource("mohamed.mp4").getFile()))
-                .ifPresent(partService::process));
+        test(mohamedFile());
 
     }
 
@@ -127,6 +123,17 @@ public class MicoClientTest {
     private File wildAnimalsFile() {
 
         return new File(getClass().getClassLoader().getResource("wild_animals.mp4").getFile());
+    }
+
+    /**
+     * Get a reference to the wild_animals.mp4 test file.
+     *
+     * @return A {@link File} instance.
+     * @since 0.2.0
+     */
+    private File mohamedFile() {
+
+        return new File(getClass().getClassLoader().getResource("mohamed.mp4").getFile());
     }
 
 }

@@ -12,7 +12,7 @@ import java.io.Serializable;
 /**
  * Represents a fragment identified by a start and end time (in milliseconds).
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 @Data
 @Entity

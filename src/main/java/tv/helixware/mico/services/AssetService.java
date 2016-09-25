@@ -10,7 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * @since 1.0.0
+ * @since 0.1.0
  */
 @Slf4j
 @Service
@@ -26,7 +26,7 @@ public class AssetService {
      *
      * @param itemService
      * @param partService
-     * @since 1.0.0
+     * @since 0.1.0
      */
     @Autowired
     public AssetService(final ItemService itemService, final PartService partService) {
@@ -39,7 +39,7 @@ public class AssetService {
      * Have MICO process an {@link Asset}.
      *
      * @param asset
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public void upload(final Asset asset) {
 
