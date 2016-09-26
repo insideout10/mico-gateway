@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @since 0.1.0
@@ -187,59 +188,37 @@ public class PartService {
 
     private void getAnnotationsInternal(final Part part) throws RepositoryException, RepositoryConfigException, ParseException, MalformedQueryException, QueryEvaluationException {
 
-        /**
-         * Temporal Video Segmentation:
-         *  * TVSShotBoundaryFrameBody
-         *
-         * Face Detection:
-         *  * FaceDetectionBody
-         */
+        // Annotations > Targets(/Resources) -> Selectors
 
-        /**
-         * Speech-To-Text
-         * QueryService queryService = anno4j
-         .createQueryService(Annotation.class)
-         .addPrefix("mico", "http://www.mico-project.eu/ns/platform/1.0/schema#")
-         .setAnnotationCriteria("oa:hasBody[is-a mico:STTBody]")
-         .setAnnotationCriteria("^oa:hasContent/^oa:hasContentPart", contentItem);
-         */
-
-//        QueryService queryService = Anno4j.getInstance()
-//                .createQueryService(Annotation.class)
-//                .addPrefix("mico", "http://www.mico-project.eu/ns/platform/1.0/schema#")
-//                .setAnnotationCriteria("oa:hasBody[is-a mico:STTBody]")
-//                .setAnnotationCriteria("^oa:hasContent/^oa:hasContentPart", part.getUuid());
-//
-//        final List<Annotation> annotations = queryService.execute();
-//
-//        log.debug("execute over");
-//
-//        annotations.stream().forEach(a -> log.debug(a.toString()));
-//
-//        log.debug("over");
-
-//        QueryService queryService = Anno4j.getInstance()
-//                .createQueryService(Annotation.class)
-//                .addPrefix("mico", "http://www.mico-project.eu/ns/platform/1.0/schema#")
-//                .setAnnotationCriteria("oa:hasBody[is-a mico:STTBody]")
-//                .setAnnotationCriteria("^oa:hasContent/^oa:hasContentPart", contentItem);
-
-//        query(part, "STTBody").stream()
-//                .forEach(a -> log.debug(a.toString()));
-
-        final Pattern pattern = Pattern.compile("t=npt:(\\d+),(\\d+)");
+        // In the following code, we collect to list each time in order to have some debugging data and understand how
+        // many of each annotation, target, resource, selector we get from the query.
 
         // Get the temporal video segmentation fragments.
-        query(part, "TVSShotBoundaryFrameBody").stream()
-//                .flatMap(a -> AnnotationHelper.target(a))
+        val annotations = query(part, "TVSShotBoundaryFrameBody");
+
+        // Get the targets.
+        val targets = annotations.stream()
+                .flatMap(a -> a.getTarget().stream())
+                .collect(Collectors.toList());
+
+        // Get the resources associated with the annotations.
+        val resources = targets.stream()
                 .filter(t -> t instanceof SpecificResource)
                 .map(t -> (SpecificResource) t)
+                .collect(Collectors.toList());
+
+        // Get the selectors from the resources.
+        val selectors = resources.stream()
                 .filter(r -> r.getSelector() instanceof FragmentSelector)
                 .map(r -> (FragmentSelector) r.getSelector())
-                .map(FragmentSelector::getValue)
+                .collect(Collectors.toList());
+
+        log.debug(String.format("Found %d annotation(s), %d target(s), %d resource(s) and %d selector(s)", annotations.size(), targets.size(), resources.size(), selectors.size()));
+
+        selectors.stream().map(FragmentSelector::getValue)
                 .distinct()
                 .forEach(v -> {
-                    final Matcher matcher = pattern.matcher(v);
+                    final Matcher matcher = NPT_PATTERN.matcher(v);
                     if (matcher.find()) {
                         log.info(String.format("[ start :: %s ][ end :: %s ]", matcher.group(1), matcher.group(2)));
                         final SequenceFragment fragment = new SequenceFragment(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)), part);
@@ -295,25 +274,18 @@ public class PartService {
 
     }
 
-    private List<Annotation> query(final Part part, final String bodyType) throws RepositoryConfigException, RepositoryException, ParseException, MalformedQueryException, QueryEvaluationException {
+    private List<PartMMM> query(final Part part, final String bodyType) throws RepositoryConfigException, RepositoryException, ParseException, MalformedQueryException, QueryEvaluationException {
 
-//        final Anno4j anno4j = Anno4j.getInstance();
-
-        final String contentPartId = part.getUri();
-//        final String ldPath = "^mmm:hasContent/^mmm:hasContentPart/mmm:hasContentPart";
+        val contentPartId = part.getUri();
 
         // Getting the QueryService to query for Annotation objects, setting the mico namespace and adding a criteria.
         final QueryService queryService = queryServiceFactory.create()
                 .addCriteria("^mmm:hasPart", contentPartId)
                 .addCriteria("mmm:hasBody[is-a mmmterms:" + bodyType + "]");
-//                .setAnnotationCriteria(ldPath, contentPartId)
-//                .setBodyCriteria("[is-a mico:" + bodyType + "]");
-
-        // executing the query
 
         try {
 
-            return queryService.execute(Annotation.class);
+            return queryService.execute(PartMMM.class);
 
         } catch (Exception e) {
 
