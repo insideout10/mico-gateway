@@ -5,6 +5,7 @@ import com.github.anno4j.model.impl.selector.FragmentSelector;
 import com.github.anno4j.model.impl.targets.SpecificResource;
 import com.github.anno4j.querying.QueryService;
 import eu.mico.platform.anno4j.model.PartMMM;
+import eu.mico.platform.anno4j.model.impl.targetmmm.SpecificResourceMMM;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -203,8 +204,8 @@ public class PartService {
 
         // Get the resources associated with the annotations.
         val resources = targets.stream()
-                .filter(t -> t instanceof SpecificResource)
-                .map(t -> (SpecificResource) t)
+                .filter(t -> t instanceof SpecificResourceMMM)
+                .map(t -> (SpecificResourceMMM) t)
                 .collect(Collectors.toList());
 
         // Get the selectors from the resources.
