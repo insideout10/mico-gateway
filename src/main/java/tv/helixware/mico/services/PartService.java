@@ -74,7 +74,7 @@ public class PartService {
     private String applicationSecret;
 
     private final static Pattern XYWH_PATTERN = Pattern.compile("#xywh=(\\d+),(\\d+),(\\d+),(\\d+)");
-    private final static Pattern NPT_PATTERN = Pattern.compile("npt:(\\d+),(\\d+)");
+    private final static Pattern NPT_PATTERN = Pattern.compile("npt:(\\d+)(?:\\.\\d+)?,(\\d+)(?:\\.\\d+)?");
 
     /**
      * Create a {@link Part} with the provided file.
@@ -216,16 +216,11 @@ public class PartService {
 
         log.debug(String.format("Found %d annotation(s), %d target(s), %d resource(s) and %d selector(s)", annotations.size(), targets.size(), resources.size(), selectors.size()));
 
-        selectors.stream().map(FragmentSelector::getValue)
+        // For each selector, save a fragment.
+        selectors.stream()
+                .map(FragmentSelector::getValue)
                 .distinct()
-                .forEach(v -> {
-                    final Matcher matcher = NPT_PATTERN.matcher(v);
-                    if (matcher.find()) {
-                        log.info(String.format("[ start :: %s ][ end :: %s ]", matcher.group(1), matcher.group(2)));
-                        final SequenceFragment fragment = new SequenceFragment(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)), part);
-                        sequenceFragmentRepository.save(fragment);
-                    }
-                });
+                .forEach(v -> saveFragment(v, part));
 
         // Running the prototype for insideout
         query(part, "FaceDetectionBody").forEach(a -> {
@@ -272,6 +267,30 @@ public class PartService {
                     });
 
         });
+
+    }
+
+    /**
+     * Parse the value using the NPT pattern and save a {@link SequenceFragment}
+     *
+     * @param value The NPT string value.
+     * @param part  The {@link Part} owner of the {@link SequenceFragment}.
+     * @since 0.2.0
+     */
+    private void saveFragment(final String value, final Part part) {
+
+        val matcher = NPT_PATTERN.matcher(value);
+
+        if (!matcher.find()) {
+
+            log.info(String.format("No match found [ value :: %s ]", value));
+            return;
+        }
+
+        log.info(String.format("[ start :: %s ][ end :: %s ]", matcher.group(1), matcher.group(2)));
+
+        val fragment = new SequenceFragment(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)), part);
+        sequenceFragmentRepository.save(fragment);
 
     }
 

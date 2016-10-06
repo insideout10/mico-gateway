@@ -14,8 +14,8 @@ import tv.helixware.mico.model.Asset;
 import tv.helixware.mico.model.Item;
 import tv.helixware.mico.model.Part;
 import tv.helixware.mico.persist.AssetRepository;
-import tv.helixware.mico.persist.FragmentRepository;
-import tv.helixware.mico.services.ItemService;
+import tv.helixware.mico.persist.ItemRepository;
+import tv.helixware.mico.persist.PartRepository;
 import tv.helixware.mico.services.MicoClient;
 import tv.helixware.mico.services.PartService;
 
@@ -40,13 +40,16 @@ public class MicoClientTest {
     private MicoClient client;
 
     @Autowired
-    private ItemService itemService;
+    private AssetRepository assetRepository;
+
+    @Autowired
+    private ItemRepository itemRepository;
+
+    @Autowired
+    private PartRepository partRepository;
 
     @Autowired
     private PartService partService;
-
-    @Autowired
-    private FragmentRepository fragmentRepository;
 
     /**
      * Test creating a MICO {@link Item} and a {@link Part}.
@@ -56,7 +59,7 @@ public class MicoClientTest {
     public void test(File file) {
 
         // Generate a fake asset.
-        val asset = asset();
+        val asset = assetRepository.save(asset());
 
         // Call MICO to create an item.
         val optItem = client.create(asset);
@@ -64,8 +67,8 @@ public class MicoClientTest {
         // Check if the item has been created.
         assertTrue(optItem.isPresent());
 
-        // Get the item from the Optional.
-        val item = optItem.get();
+        // Save and get the item from the Optional.
+        val item = itemRepository.save(optItem.get());
 
         // Generate a random filename for MICO.
         val name = RandomStringUtils.randomAlphanumeric(12) + ".mp4";
@@ -76,8 +79,8 @@ public class MicoClientTest {
         // Check if the part has been added.
         assertTrue(optPart.isPresent());
 
-        // Get the part.
-        val part = optPart.get();
+        // Save and get the part.
+        val part = partRepository.save(optPart.get());
 
         // Submit the item.
         val result = client.submit(item);

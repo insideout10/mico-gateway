@@ -343,7 +343,8 @@ public class MicoClient {
      */
     private Part createContentPart(final Item item, final String uri, final String mimeType, final String name) {
 
-        final String[] parts = uri.split("/");
+        val parts = uri.split("/");
+
         return new Part(item, uri, parts[parts.length - 1], mimeType, name);
     }
 
