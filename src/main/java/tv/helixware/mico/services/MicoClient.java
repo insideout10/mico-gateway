@@ -18,7 +18,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.retry.policy.ExceptionClassifierRetryPolicy;
 import org.springframework.stereotype.Component;
 import tv.helixware.mico.model.Asset;
 import tv.helixware.mico.model.Item;
@@ -146,7 +145,7 @@ public class MicoClient {
      * @return
      * @since 0.1.0
      */
-    public Optional<Part> addContentPart(final Item item, final String micoType, final String name, final File file) {
+    public Optional<Part> addContentPart(final Item item, final String micoType, final String mimeType, final String name, final File file) {
 
         try {
             // Build the URI and get the response.
@@ -154,6 +153,8 @@ public class MicoClient {
                     .setParameter(ITEM_URI, item.getUri())
                     .setParameter("type", micoType)
                     .setParameter("name", name)
+                    // As of 6th Oct 2016, Marcel says not to send the mimeType parameter anymore.
+                    // .setParameter("mimeType", mimeType)
                     .build();
 
             log.debug(String.format("Creating part [ url :: %s ]", url));

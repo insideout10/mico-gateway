@@ -80,16 +80,16 @@ public class PartService {
      * Create a {@link Part} with the provided file.
      *
      * @param item
-     * @param micoTYpe
+     * @param micoType
      * @param name
      * @param file
      * @return
      * @since 0.1.0
      */
-    public Optional<Part> create(final Item item, final String micoTYpe, final String name, final File file) {
+    public Optional<Part> create(final Item item, final String micoType, final String mimeType, final String name, final File file) {
 
         // Return the content part persisted to the database.
-        return client.addContentPart(item, micoTYpe, name, file)
+        return client.addContentPart(item, micoType, mimeType, name, file)
                 .map(partRepository::save);
 
     }
@@ -104,7 +104,7 @@ public class PartService {
      * @return
      * @since 0.1.0
      */
-    public Optional<Part> create(final Item item, final String micoType, final String name, final URL url) {
+    public Optional<Part> create(final Item item, final String micoType, final String mimeType, final String name, final URL url) {
 
         try {
 
@@ -125,7 +125,7 @@ public class PartService {
                 }
             }
 
-            val part = create(item, micoType, name, tempFile);
+            val part = create(item, micoType, mimeType, name, tempFile);
 
             tempFile.delete();
 

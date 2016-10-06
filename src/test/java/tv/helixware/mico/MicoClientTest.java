@@ -34,6 +34,7 @@ import static org.junit.Assert.assertTrue;
 public class MicoClientTest {
 
     private final static String MICO_TYPE = "mico:Video";
+    private final static String MIME_TYPE = "video/mp4";
 
     @Autowired
     private MicoClient client;
@@ -70,7 +71,7 @@ public class MicoClientTest {
         val name = RandomStringUtils.randomAlphanumeric(12) + ".mp4";
 
         // Add the content part to the item.
-        val optPart = client.addContentPart(item, MICO_TYPE, name, file);
+        val optPart = client.addContentPart(item, MICO_TYPE, MIME_TYPE, name, file);
 
         // Check if the part has been added.
         assertTrue(optPart.isPresent());
