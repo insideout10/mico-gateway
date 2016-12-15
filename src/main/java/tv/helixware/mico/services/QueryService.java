@@ -31,19 +31,17 @@ public class QueryService {
     private final static ContentType CONTENT_TYPE = ContentType.create("application/sparql-query", "UTF-8");
 
     /**
-     * The Http accept header.
-     *
-     * @since 0.2.0
-     */
-    private final static Header ACCEPT = new BasicHeader("Accept", "application/sparql-results+json");
-
-    /**
      * The SPARQL SELECT URL, where SELECT queries need to be posted.
      *
      * @since 0.2.0
      */
     @Value("${mico.sparql.select-url}")
     private String url;
+
+    public String query(final String statement) {
+
+        return query(statement, "application/sparql-results+json");
+    }
 
     /**
      * Query the remote SPARQL endpoint and return the response.
@@ -52,7 +50,7 @@ public class QueryService {
      * @return The response content or null in case of errors.
      * @since 0.2.0
      */
-    public String query(final String statement) {
+    public String query(final String statement, final String accept) {
 
         // Request:
         // * method: POST
@@ -67,7 +65,7 @@ public class QueryService {
             // Create the POST request.
             val post = new HttpPost(this.url);
             post.setEntity(new StringEntity(statement, CONTENT_TYPE));
-            post.setHeader(ACCEPT);
+            post.setHeader("Accept", accept);
 
             // Execute the request.
             try (val response = client.execute(post)) {
