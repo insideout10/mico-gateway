@@ -178,7 +178,7 @@ public class PartService {
 
         List<CheckStatusResponse> response;
         while ((response = client.checkStatus(item, true)).isEmpty() || !response.get(0).isFinished()) {
-            log.info(String.format("Not finished, waiting..."));
+            log.info(String.format("Still running..."));
 
             try {
                 Thread.sleep(1000L);
