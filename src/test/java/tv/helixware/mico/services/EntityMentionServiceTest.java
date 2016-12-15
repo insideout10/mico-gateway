@@ -65,7 +65,7 @@ public class EntityMentionServiceTest {
         val part = partRepository.save(new Part(item, "http://demo2.mico-project.eu:8080/marmotta/e6f5c01e-0498-4a8c-a958-3b723b2bad2a", "e6f5c01e-0498-4a8c-a958-3b723b2bad2a", "video/mp4", "Lorem Ipsum"));
 
         // Get the entity mentions for the part.
-        fragmentRepository.save(entityMentionService.query(part));
+        entityMentionService.retrieve(part);
 
         assertEquals(3, topicFragmentRepository.count());
         assertEquals(6, entityFragmentRepository.count());
