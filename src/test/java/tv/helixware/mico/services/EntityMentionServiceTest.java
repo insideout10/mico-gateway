@@ -13,6 +13,7 @@ import tv.helixware.mico.persist.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
@@ -69,6 +70,27 @@ public class EntityMentionServiceTest {
 
         assertEquals(3, topicFragmentRepository.count());
         assertEquals(6, entityFragmentRepository.count());
+
+    }
+
+    private final static Pattern CLEAN_LABEL = Pattern.compile("^(?:\"(?=(.*?)(?:\"@\\w{2}$))|(.*)$)");
+
+    @Test
+    public void clean() {
+
+        log.debug(String.format("%d", CLEAN_LABEL.matcher("label\"@en").groupCount()));
+        log.debug(String.format("%d", CLEAN_LABEL.matcher("label").groupCount()));
+        log.debug(String.format("%d", CLEAN_LABEL.matcher("la\"bel").groupCount()));
+        log.debug(String.format("%d", CLEAN_LABEL.matcher("lab\\\"el\"@en").groupCount()));
+        log.debug(String.format("%d", CLEAN_LABEL.matcher("label\"\"en\"@en").groupCount()));
+        log.debug(String.format("%d", CLEAN_LABEL.matcher("lb\"@en\"").groupCount()));
+
+        val matcher = CLEAN_LABEL.matcher("label\"@en");
+
+        if (matcher.matches()) {
+            log.debug(matcher.group(1));
+            log.debug(matcher.group(2));
+        }
 
     }
 

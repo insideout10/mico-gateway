@@ -12,6 +12,7 @@ import tv.helixware.mico.model.TopicFragment;
 import tv.helixware.mico.persist.FragmentRepository;
 
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 /**
  * The {@link EntityMentionService} queries MICO for {@link TopicFragment}s and for {@link EntityFragment}s related to
@@ -94,11 +95,22 @@ public class EntityMentionService {
                 // Create a TopicFragment or an EntityFragment, based on whether the `type` field is set (EntityFragment)
                 // or not (TopicFragment).
                 .map(x -> x[2].isEmpty()
-                        ? new TopicFragment(x[0], x[1], Double.valueOf(x[3]), part)
-                        : new EntityFragment(x[0], x[1], x[2], Double.valueOf(x[3]), part))
+                        ? new TopicFragment(cleanLabel(x[0]), x[1], Double.valueOf(x[3]), part)
+                        : new EntityFragment(cleanLabel(x[0]), x[1], x[2], Double.valueOf(x[3]), part))
                 // Finally save each fragment.
                 .forEach(repository::save);
 
+    }
+
+    private final static Pattern CLEAN_LABEL = Pattern.compile("^(?:\"(?=(.*?)(?:\"@\\w{2}$))|(.*)$)");
+
+    private String cleanLabel(final String label) {
+
+        val matcher = CLEAN_LABEL.matcher(label);
+
+        if (!matcher.matches()) return label;
+
+        return null != matcher.group(1) ? matcher.group(1) : matcher.group(2);
     }
 
 }
