@@ -5,6 +5,10 @@ mico:
   username:
   password:
 
+helixware.application:
+    key:
+    secret:
+
 spring:
   datasource:
     url:

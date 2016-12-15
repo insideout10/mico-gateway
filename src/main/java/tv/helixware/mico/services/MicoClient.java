@@ -187,53 +187,6 @@ public class MicoClient {
         return Optional.empty();
     }
 
-//    /**
-//     * Add a {@link ContentPart} to a {@link ContentItem}.
-//     *
-//     * @param contentItem
-//     * @param mimeType
-//     * @param name
-//     * @return
-//     * @since 0.1.0
-//     */
-//    public Optional<ContentPart> addContentPart(final ContentItem contentItem, final String mimeType, final String name, final InputStream stream) {
-//
-//        try {
-//            // Build the URI and get the response.
-//            final URI uri = new URIBuilder(serverURL + INJECT_ADD_PATH)
-//                    .setParameter("ci", contentItem.getUri())
-//                    .setParameter("type", mimeType)
-//                    .setParameter("name", name)
-//                    .build();
-//
-//            final InputStreamEntity entity = new InputStreamEntity(stream, ContentType.create(mimeType));
-//
-//            final Optional<String> response = post(uri.toString(), Optional.of(entity));
-//
-//            // If the response is empty, we return an empty.
-//            if (!response.isPresent())
-//                return Optional.empty();
-//
-//            final JsonNode node = objectMapper.readTree(response.get());
-//
-//            // If the *uri* field is missing from the JSON return an empty.
-//            if (!node.has("uri")) {
-//                log.error(String.format("The JSON is invalid [ url :: %s ][ response body :: %s ]", uri, response.get()));
-//                return Optional.empty();
-//            }
-//
-//            // Get the URI and create a new ContentItem.
-//            return Optional.of(createContentPart(contentItem, node.get("uri").asText(), mimeType, name));
-//
-//        } catch (URISyntaxException e) {
-//            log.error(String.format("The URL is invalid [ url :: %s ]", serverURL + INJECT_ADD_PATH), e);
-//        } catch (IOException e) {
-//            log.error(String.format("An error occurred while parsing the response [ url :: %s ]", serverURL + INJECT_ADD_PATH), e);
-//        }
-//
-//        return Optional.empty();
-//    }
-
     /**
      * Submit the {@link Item} for processing.
      *

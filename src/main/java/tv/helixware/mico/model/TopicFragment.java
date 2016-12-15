@@ -15,7 +15,7 @@ import javax.persistence.Entity;
 @DiscriminatorValue("topic")
 @Entity
 @NoArgsConstructor
-public class TopicFragment {
+public class TopicFragment extends Fragment {
 
     private String label;
     private String reference;

@@ -24,7 +24,7 @@ import java.util.concurrent.Executors;
 @EnableJpaAuditing
 public class AppConfig {
 
-    @Value("${mico.server}")
+    @Value("${mico.server:demo}")
     private String server;
 
     @Value("${mico.path:broker/}")
