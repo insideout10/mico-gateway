@@ -8,6 +8,7 @@ import tv.helixware.mico.model.EntityFragment;
 import tv.helixware.mico.model.Fragment;
 import tv.helixware.mico.model.Part;
 import tv.helixware.mico.model.TopicFragment;
+import tv.helixware.mico.persist.FragmentRepository;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,6 +26,13 @@ import static java.util.stream.Collectors.toList;
 public class EntityMentionService {
 
     /**
+     * A {@link FragmentRepository} instance used to persist {@link EntityFragment}s and {@link TopicFragment}s.
+     *
+     * @since 0.2.0
+     */
+    private FragmentRepository<Fragment> repository;
+
+    /**
      * The query statement template.
      *
      * @since 0.2.0
@@ -32,7 +40,7 @@ public class EntityMentionService {
     private final static String STATEMENT = "PREFIX mmm: <http://www.mico-project.eu/ns/mmm/2.0/schema#>\n"
             + "PREFIX fam: <http://vocab.fusepool.info/fam#>\n"
             + "\n"
-            + "SELECT * WHERE { {"
+            + "SELECT ?label ?entityReference ?type ?confidence WHERE { {"
             + "  <%1$s> mmm:hasPart [ mmm:hasBody ["
             + "    a <http://vocab.fusepool.info/fam#LinkedEntity> ;"
             + "    fam:entity-label ?label ;"
@@ -56,21 +64,32 @@ public class EntityMentionService {
      */
     private final QueryService queryService;
 
-    public List<Fragment> query(final Part part) {
+    /**
+     * Retrieves the {@link EntityFragment}s and {@link TopicFragment}s from the remote MICO server and persist them
+     * to the local data store.
+     *
+     * @param part The {@link Part}.
+     * @since 0.2.0
+     */
+    public void retrieve(final Part part) {
 
         // Create the statement.
         val statement = String.format(STATEMENT, part.getItem().getUri());
 
+        // Query the remote MICO instance and get the string response (which is a tsv).
         val response = queryService.query(statement, "text/tab-separated-values");
 
-        return Arrays.stream(response.split("\n"))
-                // Skip the header.
-                .skip(1)
+        // Split the whole file in lines, and skip the header.
+        Arrays.stream(response.split("\n")).skip(1)
+                // Split each line into fields.
                 .map((x) -> x.split("\t"))
+                // Create a TopicFragment or an EntityFragment, based on whether the `type` field is set (EntityFragment)
+                // or not (TopicFragment).
                 .map((x) -> x[2].isEmpty()
                         ? new TopicFragment(x[0], x[1], Double.valueOf(x[3]), part)
                         : new EntityFragment(x[0], x[1], x[2], Double.valueOf(x[3]), part))
-                .collect(toList());
+                // Finally save each fragment.
+                .forEach(repository::save);
     }
 
 }

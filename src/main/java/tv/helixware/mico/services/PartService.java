@@ -25,10 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tv.helixware.mico.factories.QueryServiceFactory;
 import tv.helixware.mico.helpers.AnnotationHelper;
-import tv.helixware.mico.model.FaceFragment;
-import tv.helixware.mico.model.Item;
-import tv.helixware.mico.model.Part;
-import tv.helixware.mico.model.SequenceFragment;
+import tv.helixware.mico.model.*;
 import tv.helixware.mico.persist.FaceFragmentRepository;
 import tv.helixware.mico.persist.PartRepository;
 import tv.helixware.mico.persist.SequenceFragmentRepository;
@@ -66,6 +63,14 @@ public class PartService {
     private final PartRepository partRepository;
     private final SequenceFragmentRepository sequenceFragmentRepository;
     private final FaceFragmentRepository faceFragmentRepository;
+
+    /**
+     * An {@link EntityMentionService} instance used to query the remote MICO platform and persist locally {@link TopicFragment}s
+     * and {@link EntityFragment}s.
+     *
+     * @since 0.2.0
+     */
+    private final EntityMentionService entityMentionService;
 
     @Value("${helixware.application.key}")
     private String applicationKey;
@@ -267,6 +272,9 @@ public class PartService {
                     });
 
         });
+
+        // Retrieve and persist locally Entity and Topic Fragments.
+        entityMentionService.retrieve(part);
 
     }
 

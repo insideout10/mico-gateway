@@ -16,7 +16,31 @@ import javax.persistence.Entity;
 @DiscriminatorValue("entity")
 @Entity
 @NoArgsConstructor
-public class EntityFragment extends TopicFragment {
+// Even though the Entity Fragment shares many properties with the TopicFragment (being a de facto extended version of it),
+// we extend the base abstract Fragment class in order to avoid the TopicFragmentRepository returning TopicFragments and
+// EntityFragments all together.
+public class EntityFragment extends Fragment {
+
+    /**
+     * The entity's label.
+     *
+     * @since 0.2.0
+     */
+    private String label;
+
+    /**
+     * The entity's URI reference.
+     *
+     * @since 0.2.0
+     */
+    private String reference;
+
+    /**
+     * The entity's confidence score.
+     *
+     * @since 0.2.0
+     */
+    private double confidence;
 
     /**
      * The entity's type URI.
@@ -36,8 +60,11 @@ public class EntityFragment extends TopicFragment {
      * @since 0.2.0
      */
     public EntityFragment(String label, String reference, String type, double confidence, Part part) {
-        super(label, reference, confidence, part);
+        super(-1L, -1L, part);
 
+        this.label = label;
+        this.reference = reference;
+        this.confidence = confidence;
         this.type = type;
 
     }
