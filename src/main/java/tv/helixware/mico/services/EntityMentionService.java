@@ -83,6 +83,8 @@ public class EntityMentionService {
         Arrays.stream(response.split("\n")).skip(1)
                 // Split each line into fields.
                 .map((x) -> x.split("\t"))
+                // Filter out rows with no fields.
+                .filter((x) -> 4 == x.length)
                 // Create a TopicFragment or an EntityFragment, based on whether the `type` field is set (EntityFragment)
                 // or not (TopicFragment).
                 .map((x) -> x[2].isEmpty()
